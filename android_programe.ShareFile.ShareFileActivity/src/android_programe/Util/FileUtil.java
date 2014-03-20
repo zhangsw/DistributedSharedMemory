@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
-import android_programe.Consistency.FileInf;
+import android_programe.MemoryManager.FileInf;
 
 public class FileUtil {
 
@@ -58,5 +60,16 @@ public class FileUtil {
 			if(name != null) return name;
 		}
 		return null;
+	}
+	
+	/**
+	 * 将time转化为人可读的日期
+	 * @param time	
+	 * @return
+	 */
+	public static String getTimeFromLong(long time){
+		Date date=new Date(time);
+		SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		return df.format(date);
 	}
 }

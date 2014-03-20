@@ -5,30 +5,29 @@ import java.io.*;
 import java.util.*;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
 import android.util.Log;
-import android_programe.Consistency.Consistency;
-import android_programe.Consistency.FileInf;
-import android_programe.Util.FileUtil;
+import android_programe.MemoryManager.MemoryManager;
+
 
 public class SharedMem extends Service{
 
-	private Consistency conManager;
+	private MemoryManager memManager;
+	private String localID;
 	private List fileList;
 	private String path;
 	
 	private MyBinder myBinder = new MyBinder();
-	
-	/*public SharedMem(){
-		fileList =new ArrayList<FileInf>();
-		getFileInfList(path,fileList);
-		conManager = new Consistency(path,fileList);
-	}*/
+	private ConnectionChangeReceiver mConChangeReceiver;
 	
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -41,39 +40,58 @@ public class SharedMem extends Service{
 		// TODO Auto-generated method stub
 		super.onCreate();
 		System.out.println("enter service oncreate");
-		/*path = "/sdcard/wallpaper/";
-		fileList =new ArrayList<FileInf>();
-		getFileInfList(path,fileList);
 		try {
-			conManager = new Consistency(path,fileList);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		conManager.SimpleCM();*/
-		
-		try {
-			conManager = new Consistency();
-			String target = "";
-			System.out.println("before connect");
-			//conManager.connect("114.212.87.66");
-			//conManager.addShareDevice("/sdcard/wallpaper/", "114.212.87.66", 0);
+			localID = getLocalAddress();
+			memManager = new MemoryManager(localID);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
+		mConChangeReceiver = new ConnectionChangeReceiver(this);
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+		filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+		registerReceiver(mConChangeReceiver,filter);
 	}
 	
-	
-	
-	
-
 	@Override
 	public void onDestroy() {
 		// TODO Auto-generated method stub
 		super.onDestroy();
+		unregisterReceiver(mConChangeReceiver);
 	}
+	
+	/**
+	 * 本地设备的wifi被关闭了
+	 */
+	public void wifiDisabled(){
+		System.out.println("wifi is disabled");
+		networkDisabled();
+	}
+	
+	/**
+	 * 本地设备连接上了wifi
+	 */
+	public void wifiConnected(){
+		System.out.println("wifi is connected,local ip is " + getLocalAddress());
+		String ip = getLocalAddress();
+		if((localID == null) || !ip.equals(localID)){
+			localID = ip;
+			networkReconnectAll(ip);
+		}
+	}
+	
+	/**
+	 * 本地设备断开了wifi
+	 */
+	public void wifiDisconnected(){
+		System.out.println("wifi is disconnected");
+		//wifi已经断开了当前连接，网络不可用
+		networkDisabled();
+	}
+	
+	
 	public void readFile(String filename,String filePath){
 		File file = new File(filePath);
 	}
@@ -81,36 +99,38 @@ public class SharedMem extends Service{
 	public void writeFile(String filename){
 		
 	}
-	/*
-	private void getFileInfList(String path,List <FileInf>fileList){
-		File filePath = new File(path);
-		if(filePath.isDirectory()){
-			File []files = filePath.listFiles();
-			if(files == null) return;
-			for(int i=0;i<files.length;i++)
-				getFileInfList(files[i].getAbsolutePath(),fileList);
-		}
-		else if(filePath.isFile()){
-			String filename = filePath.getName();
-			String filepath = filePath.getAbsolutePath();
-			String MD5 = FileUtil.getFileMD5(filePath);
-			FileInf fileInf = new FileInf(filename,filepath,MD5);
-			fileList.add(fileInf);
-		}
+	
+	/**
+	 * 网络重新连接
+	 */
+	private void networkReconnectAll(String localIP){
+		memManager.reconnectAll(localIP);
+		System.out.println("reconnect to all device");
 	}
 	
-	/*
-	private boolean handleDataFromActivity(int code, Parcel data, Parcel reply, int flags){
-		switch(code){
-		case 1:{
-			String IP = data.readString();
-		}break;
-		
-		}
+	/**
+	 * 网络被关闭
+	 */
+	private void networkDisabled(){
+		localID = null;
+		memManager.networkDisabled();	
 	}
-	*/
+	
+	private String getLocalMacAddress(){
+		WifiManager wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+		WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+		return wifiInfo.getMacAddress();
+	}
+	
+	private String getLocalAddress(){
+		WifiManager wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+		WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+		int ipAddress = wifiInfo.getIpAddress();    
+        if(ipAddress==0)return null;  
+        return ((ipAddress & 0xff)+"."+(ipAddress>>8 & 0xff)+"."  
+                +(ipAddress>>16 & 0xff)+"."+(ipAddress>>24 & 0xff));  
+	}
 
-	
 	public class MyBinder extends Binder{
 		public SharedMem getService(){
 			return SharedMem.this;
@@ -124,12 +144,24 @@ public class SharedMem extends Service{
 		}
 		
 		public boolean connect(String ip) throws IOException{
-			if(conManager == null) conManager = new Consistency();
-			if(conManager.connect(ip)){
-				//conManager.addShareDevice("/sdcard/wallpaper/", ip, 0);
+			if(memManager == null) memManager = new MemoryManager(getLocalMacAddress());
+			if(memManager.connect(ip)){
 				return true;
 			}
 			else return false;
+		}
+		
+		public boolean disconnect(String ip){
+			if(memManager == null) return false;
+			else{
+				System.out.println("before enter memManager's disconnect device:" + ip);
+				boolean tag = memManager.disconnect(ip);
+				if(tag){
+					System.out.println("has been disconnected with device: " + ip);
+					return true;
+				}
+				return false;
+			}
 		}
 		
 		

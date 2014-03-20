@@ -1,71 +1,78 @@
 package android_programe.PsyLine;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.ObjectInputStream;
 import java.net.Socket;
 
+import android_programe.FileSystem.VersionMap;
+import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
+import android_programe.Util.FileUtil;
 
 public class Responser implements Runnable{
     private Socket socket = null;
     private String ip;
     private InputStream inputStream;
-	private OutputStream outputStream;
 	private String line;
-	private StringBuffer sb;
-	private DataInputStream dis;
 	private DataOutputStream dos;
     private String savePath;
     private int bufferSize = 8192;
 	private byte[] buf;
 	private PsyLine psyline;
+	private ObjectInputStream ois;
+	private boolean tag;
     
     public Responser(Socket socket,PsyLine psyline){
         this.socket=socket;
         this.psyline = psyline;
         ip = socket.getInetAddress().getHostAddress();
+        tag = true;
         try {
 			inputStream = socket.getInputStream();
-			outputStream = socket.getOutputStream();
-			dis = new DataInputStream(new BufferedInputStream(inputStream));
-			//savePath = "/sdcard/wallpaper/";
-			savePath = FileConstant.ROOTPATH;
+			ois = new ObjectInputStream(inputStream);
+			savePath = FileConstant.DEFAULTSAVEPATH;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        
+    }
+    
+    public void stop(){
+    	tag = false;
     }
     
     public void run() {
     	// TODO 
     	try{
-    		while(true){
-    			if(socket.isClosed()) System.out.println("socket is closed");
+    		while(tag){
+    			if(socket.isClosed()){
+    				System.out.println("socket is closed");
+    				break;
+    			}
     			else{
-    				line = dis.readUTF();
+    				line = ois.readUTF();
+    				System.out.println("receive line,msg is:" + line);
     				if(line!=null){
-    					int state = Integer.parseInt(line.substring(0,2));
-    					switch(state){
+    					int type = Integer.parseInt(line.substring(0,2));
+    					switch(type){
     					case FileConstant.FILEDATA:{
     						System.out.println("receive filedata------");
-    						int passedLength = 0;
-    						int size = Integer.parseInt(line.substring(line.indexOf("$SIZE$")+6,line.indexOf("$PATH$")));
-    						String relativeFilePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
-    						String Path = savePath + relativeFilePath;
+    						long passedLength = 0;
+    						long size = Long.parseLong(line.substring(line.indexOf("$SIZE$")+6,line.length()-1));
+    						FileMetaData fileMetaData = (FileMetaData)ois.readUnshared();
+							
+    						String Path = savePath + "/" + FileUtil.getFileNameFromPath(fileMetaData.getRelativePath());
     						
     						File file = new File(Path);
     						File parent = file.getParentFile();
     						if(!parent.exists()) parent.mkdirs();
     						
-    						System.out.println("size is " + size + "\n" + "relativeFilePath is " + relativeFilePath);
+    						System.out.println("size is " + size + "\n" + "relativeFilePath is " + fileMetaData.getRelativePath());
     						System.out.println("savePath is "+ Path);
     						buf = new byte[bufferSize];
     						try{
@@ -75,9 +82,10 @@ public class Responser implements Runnable{
     						}
     						while(true){
     							int read = 0;
-    							if (dis != null){
+    							if (ois != null){
     								try{
-    									read = dis.read(buf);
+    									if(passedLength >= size) break;
+    									read = ois.read(buf);
     								}catch(IOException e){
     									e.printStackTrace();
     								}
@@ -88,14 +96,9 @@ public class Responser implements Runnable{
     							try{
     								dos.write(buf,0,read);
     								dos.flush();
-    								//System.out.println("write file---------------");
     							}catch(IOException e){
     								e.printStackTrace();
     							}
-    							}
-    							if(passedLength >= size) {
-    								System.out.println("finished written");
-    								break;
     							}
     						}
     						}
@@ -107,47 +110,79 @@ public class Responser implements Runnable{
     								e.printStackTrace();
     							}
     						}
+    						
+    						psyline.receiveFileData(ip,fileMetaData,file);
     					}break;
     					
     					case FileConstant.FILEINF:{									//接收到的是文件信息
     						System.out.println("receive fileinf---------");
     						String relativePath = line.substring(line.indexOf("$PATH$")+6, line.indexOf("$MD5$"));
     						String MD5 = line.substring(line.indexOf("$MD5$")+5, line.length()-1); 
-    						psyline.receiveFileInf(ip,relativePath, savePath+relativePath, MD5);
+    						psyline.receiveFileInf(ip,relativePath, FileConstant.DEFAULTROOTPATH+relativePath, MD5);
     					}break;
     					
     					case FileConstant.ASKFILE:{									//接收到的是请求文件信息
     						System.out.println("receive askfile---------");
     						String relativePath = line.substring(line.indexOf("$PATH$")+6, line.length()-1);
-    						psyline.receiveAskFile(ip, relativePath, savePath+relativePath);
+    						psyline.receiveAskFile(ip, relativePath, FileConstant.DEFAULTROOTPATH+relativePath);
     					}break;
     					
     					case FileConstant.DELETEFILE:{								//接收到的是删除文件信息
     						System.out.println("receive deletefile-----");
     						String relativeFilePath = line.substring(line.indexOf("$PATH$")+6, line.length()-1);
-    						psyline.receiveDeleteFile(ip, savePath+relativeFilePath);
+    						psyline.receiveDeleteFile(ip, FileConstant.DEFAULTROOTPATH+relativeFilePath);
     					}break;
     					
     					case FileConstant.RENAMEFILE:{								//收到的是重命名文件信息
     						System.out.println("receive renamefile-----");
     						String oldRelativeFilePath = line.substring(line.indexOf("$OLDPATH$")+9, line.indexOf("$NEWPATH$"));
     						String newRelativeFilePath = line.substring(line.indexOf("$NEWPATH$")+9, line.length()-1);
-    						psyline.receiveRenameFile(ip,savePath+oldRelativeFilePath,savePath+newRelativeFilePath);
+    						psyline.receiveRenameFile(ip,FileConstant.DEFAULTROOTPATH+oldRelativeFilePath,FileConstant.DEFAULTROOTPATH+newRelativeFilePath);
     					}break;
     					
     					case FileConstant.MAKEDIR:{
     						System.out.println("receive makedir--------");
     						String relativePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
     						System.out.println("relativePath is "+relativePath);
-    						psyline.receiveMakeDir(ip, savePath+relativePath);
+    						psyline.receiveMakeDir(ip, FileConstant.DEFAULTROOTPATH+relativePath);
     					}break;
+    					
+    					case FileConstant.FILEVERSIONMAP:{
+    						try {
+								VersionMap versionMap = (VersionMap)ois.readUnshared();
+								String fileID = line.substring(line.indexOf("$ID$")+4,line.indexOf("$TAG$"));
+								String tag = line.substring(line.indexOf("$TAG$")+5, line.indexOf("$PATH$"));
+	    						String relativePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
+	    						psyline.receiveVersionMap(ip, versionMap, fileID, relativePath,tag);
+							} catch (ClassNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+    					}break;
+    					
+    					case FileConstant.FILEUPDATE:{
+    						FileMetaData fileMetaData = (FileMetaData)ois.readUnshared();
+    						psyline.receiveFileUpdate(ip,fileMetaData);
+    					}break;
+    					
+    					case FileConstant.DISCONNECT:{
+    						System.out.println("receive disconnect--------");
+    						psyline.receiveDisconnect(ip);
+    					}
+    					default:{
+    	
+    						System.out.println("meaningless command:,command's number is " + type);
+    					}
     					}
     				}
     			}
     		}
     	}catch (IOException e){
     		e.printStackTrace();
-    	}
+    	} catch (ClassNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
     	
     }
 

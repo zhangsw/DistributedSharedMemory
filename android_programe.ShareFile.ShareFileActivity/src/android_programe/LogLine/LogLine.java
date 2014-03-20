@@ -1,23 +1,27 @@
 package android_programe.LogLine;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import android.util.Log;
-import android_programe.Consistency.Consistency;
+import android_programe.FileSystem.VersionMap;
+import android_programe.MemoryManager.FileMetaData;
+import android_programe.MemoryManager.MemoryManager;
 import android_programe.PsyLine.*;
+import android_programe.Util.FileConstant;
 
 public class LogLine {
 
 	
 	private PsyLine psyLine;
-	private Consistency consistency;
+	private MemoryManager memoryManager;
 	private List devices;				//style分为二种，0:TCP,1:bluetooth,
 	
-	public LogLine(Consistency c) throws IOException{
+	public LogLine(MemoryManager c) throws IOException{
 		psyLine = new PsyLine(this);
 		devices = new ArrayList<DevicesInf>();
-		consistency = c;
+		memoryManager = c;
 	}
 	
 	/** 通过ip建立设备间的连接(TCP连接)
@@ -28,9 +32,36 @@ public class LogLine {
 		
 	}
 	
+	/**
+	 * 同之前连接的设备重新建立连接
+	 * @param localIP 
+	 */
+	public void reconnectAll(String localIP){
+		psyLine.reconnectAll(localIP);
+	}
+	
 	/** 通过蓝牙进行设备间的连接*/
 	public void connect(){
 		
+	}
+	
+	/**
+	 * 同对象设备断开连接
+	 * @param target 需要断开连接的设备名
+	 */
+	public boolean disconnect(String target){
+		int index = getIndexByName(target);
+		if(index != -1){
+			DevicesInf di = (DevicesInf)devices.get(index);
+			System.out.println("before enter psyline's disconnect");
+			if(psyLine.disconnect(di.getID())){
+				System.out.println("psyline has disconnected");
+				devices.remove(index);
+				return true;
+			}
+			else return false;
+		}
+		else return false;
 	}
 	
 	public boolean sendFileInf(String target,String relativePath,String MD5){
@@ -42,16 +73,14 @@ public class LogLine {
 		return false;
 	}
 	
-	/**给地址为参数为ip的设备发送文件*/
-	public boolean sendFile(String target,final String absolutePath,final String relativeFilePath){
-		
+	public void sendFile(String target, FileMetaData metaData,
+			String absolutePath) {
+		// TODO Auto-generated method stub
 		int index = getIndexByName(target);
 		if(index != -1){
 			DevicesInf di = (DevicesInf)devices.get(index);
-			return psyLine.sendFile(di.getID(),absolutePath,relativeFilePath);
-		}
-		return false;
-		
+			psyLine.sendFile(di.getID(), metaData, absolutePath);
+		}	
 	}
 	
 	public boolean makeDir(String target,String relativePath){
@@ -77,7 +106,7 @@ public class LogLine {
 	public boolean receiveDeleteFile(String targetIp, String filepath){
 		int index = getIndexByID(targetIp);
 		if(index != -1){
-			return consistency.receiveDeletaFile(((DevicesInf)devices.get(index)).getName(), filepath);
+			return memoryManager.receiveDeleteFile(((DevicesInf)devices.get(index)).getName(), filepath);
 		}
 		return false;
 	}
@@ -87,7 +116,7 @@ public class LogLine {
 		System.out.println("target ip is "+targetIp);
 		if(index != -1){
 			System.out.println("index is not -1");
-			return consistency.receiveFileInf(((DevicesInf)devices.get(index)).getName(), relativePath, absolutePath, MD5);
+			return memoryManager.receiveFileInf(((DevicesInf)devices.get(index)).getName(), relativePath, absolutePath, MD5);
 		}
 		return false;
 	}
@@ -95,7 +124,7 @@ public class LogLine {
 	public boolean receiveAskFile(String targetIp, String relativePath,String absolutePath) {
 		int index = getIndexByID(targetIp);
 		if(index != -1){
-			return consistency.receiveAskFile(((DevicesInf)devices.get(index)).getName(), relativePath, absolutePath);
+			return memoryManager.receiveAskFile(((DevicesInf)devices.get(index)).getName(), relativePath, absolutePath);
 		}
 		return false;
 	}
@@ -103,7 +132,7 @@ public class LogLine {
 	public boolean receiveRenameFile(String targetIp, String oldPath,String newPath) {
 		int index = getIndexByID(targetIp);
 		if(index != -1){
-			return consistency.receiveRenameFile(((DevicesInf)devices.get(index)).getName(),oldPath,newPath);
+			return memoryManager.receiveRenameFile(((DevicesInf)devices.get(index)).getName(),oldPath,newPath);
 		}
 		return false;
 	}
@@ -112,12 +141,81 @@ public class LogLine {
 		int index = getIndexByID(targetIp);
 		if(index != -1){
 			System.out.println("before enter consistency receiveMakeDir,absolutePath is "+ absolutePath);
-			return consistency.receiveMakeDir(((DevicesInf)devices.get(index)).getName(), absolutePath);
+			return memoryManager.receiveMakeDir(((DevicesInf)devices.get(index)).getName(), absolutePath);
 		}
 		return false;
 	}
 	
-	/**从目标为taeget的设备请求文件*/
+	/**
+	 * 发送文件的versionMap
+	 * @param target	目标
+	 * @param fileID	文件的id
+	 * @param versionMap	
+	 * @param relativePath	文件的相对路径
+	 */
+	public void sendFileVersionMap(String target, String fileID,
+			VersionMap versionMap, String relativePath,String tag) {
+		// TODO Auto-generated method stub
+		int index = getIndexByName(target);
+		if(index != -1){
+			DevicesInf di = (DevicesInf)devices.get(index);
+			psyLine.sendFileVersionMap(di.getID(), fileID,versionMap,relativePath,tag);
+		}
+	}
+	
+	public void receiveFileData(String targetIp, FileMetaData fileMetaData,
+			File file) {
+		// TODO Auto-generated method stub
+		int index = getIndexByID(targetIp);
+		if(index != -1)
+			memoryManager.receiveFileData(((DevicesInf)devices.get(index)).getName(), fileMetaData, file);
+	}
+	
+	/**
+	 * 接收到文件的versionMap
+	 * @param targetIp	目标
+	 * @param versionMap	
+	 * @param fileID	文件的id
+	 * @param relativePath	文件的相对路径
+	 * @return
+	 */
+	
+	public boolean receiveVersionMap(String targetIp,VersionMap versionMap,String fileID,String relativePath,String tag){
+		int index = getIndexByID(targetIp);
+		if(index != -1){
+			return memoryManager.receiveVersionMap(((DevicesInf)devices.get(index)).getName(),fileID, versionMap, relativePath,tag);
+		}
+		else return false;
+	}
+	
+	/**
+	 * 收到文件的更新
+	 * @param ip
+	 * @param fileMetaData
+	 */
+	public void receiveFileUpdate(String ip, FileMetaData fileMetaData) {
+		// TODO Auto-generated method stub
+		int index = getIndexByID(ip);
+		if(index != -1)
+			memoryManager.receiveFileUpdate(((DevicesInf)devices.get(index)).getName(),fileMetaData);
+	}
+	
+	/**
+	 * 收到断连信息
+	 * @param ip
+	 */
+	public void receiveDisconnect(String ip) {
+		// TODO Auto-generated method stub
+		int index = getIndexByID(ip);
+		if(index != -1){
+			DevicesInf di = (DevicesInf)devices.get(index);
+			memoryManager.receiveDisconnect(di.getName());
+			devices.remove(index);
+		}
+	}
+
+	
+	/**从目标为target的设备请求文件*/
 	public boolean fetchFile(String target,final String relativePath){
 		
 		int index = getIndexByName(target);
@@ -129,7 +227,8 @@ public class LogLine {
 		
 	}
 	
-	/**给所有同本设备相连接的设备发送文件*/
+	/*
+	给所有同本设备相连接的设备发送文件
 	public boolean sendFileEve(String filePath, String fileName){	
 		for(int i=0;i<devices.size();i++){
 			DevicesInf temp = (DevicesInf)devices.get(i);
@@ -139,7 +238,7 @@ public class LogLine {
 				return true;					//暂时不考虑蓝牙
 		}
 		return true;
-	}
+	}*/
 	
 	/**向目标target发送修改文件名字信息*/
 	public boolean renameFile(String target, String relativeFilePath,String newRelativeFilePath) {
@@ -152,6 +251,19 @@ public class LogLine {
 		
 	}
 	
+	public void sendFileUpdateInform(List<String> targets,
+			FileMetaData fileMetaData) {
+		// TODO Auto-generated method stub
+		List <String>deviceId = new ArrayList<String>();
+		for(int i=0;i<targets.size();i++){
+			int index = getIndexByName(targets.get(i));
+			if(index != -1)
+				deviceId.add(((DevicesInf)devices.get(index)).getID());
+		}
+		if(deviceId.size()>0)
+			psyLine.sendFileUpdateInform(deviceId,fileMetaData);
+	}
+	
 	/**向所有同本设备相连接的设备请求文件*/
 	public boolean fetchFile(final String fileName){
 		return true;
@@ -160,18 +272,26 @@ public class LogLine {
 	public synchronized  void addDevice(String name, String ip, int style){
 		System.out.println("enter logline addDevice---");
 		DevicesInf temp = new DevicesInf(name,ip,style);
-		if(!devices.contains(temp)) {
+		if(!devices.contains(temp)){
 			devices.add(temp);
-			consistency.addShareDevice("/sdcard/wallpaper", name, 0);
-			}
+			memoryManager.addShareDevice(FileConstant.DEFAULTROOTPATH, name, 0);
 		}
+	}
+	
+	
+	public synchronized void removeDevice(String id){
+		int index = getIndexByID(id);
+		if(index != -1){
+			DevicesInf di = (DevicesInf)devices.get(index);
+			devices.remove(index);
+			memoryManager.removeShareDevice(di.getName());
+		}
+	}
 	
 	private int getIndexByName(String target){
 		int i = 0;
 		System.out.println("devices size is "+devices.size());
 		for(;i<devices.size();i++){
-			System.out.println(((DevicesInf)(devices.get(i))).getName()+"------------");
-			System.out.println(target+"------------");
 			if(((DevicesInf)(devices.get(i))).getName().equals(target))
 				return i;
 		}
@@ -180,18 +300,34 @@ public class LogLine {
 	
 	private int getIndexByID(String ID){
 		int i = 0;
-		System.out.println("devices size is "+devices.size());
 		System.out.println(((DevicesInf)(devices.get(i))).getID()+"$$"+ID+"$$");
 		for(;i<devices.size();i++){
 			System.out.println(((DevicesInf)(devices.get(i))).getID());
 			if(((DevicesInf)(devices.get(i))).getID().equals(ID) ){
-				System.out.println("存在设备---");
 				return i;
-			}
-				
+			}		
 		}
 		return -1;
 	}
+
+	public String getDeviceNameByID(String ID){
+		int i = getIndexByID(ID);
+		if(i != -1){
+			DevicesInf dif = (DevicesInf)devices.get(i);
+			return dif.getName();
+		}
+		else return null;
+	}
+	
+
+	
+	
+
+	
+
+	
+
+	
 
 	
 

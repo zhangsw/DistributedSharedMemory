@@ -1,6 +1,14 @@
 package android_programe.ShareFile;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.Activity;
@@ -8,16 +16,20 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
-import android_programe.Consistency.Consistency;
-import android_programe.Consistency.FileObserverManager;
+import android_programe.Conflict.ConflictDetect;
+import android_programe.FileSystem.FileManager;
+import android_programe.FileSystem.VersionMap;
+import android_programe.MemoryManager.MemoryManager;
+import android_programe.Util.FileConstant;
 
 public class TestActivity extends Activity{
 
-	private FileObserverManager fom;
-	private Consistency con;
+	private FileManager fom;
+	private MemoryManager con;
 	Button bt1;
 	Button bt2;
 	String path;
+	private int num = 0;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
@@ -26,7 +38,7 @@ public class TestActivity extends Activity{
 		//fom = new FileObserverManager();
 		try {
 			System.out.println("- 1 -");
-			con = new Consistency();
+			con = new MemoryManager("AA");
 			System.out.println("- 2 -");
 			
 		} catch (IOException e) {
@@ -40,7 +52,6 @@ public class TestActivity extends Activity{
 			
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				
 					//fom = new FileObserverManager();
 					//fom.registerObserver("01", path+"/wallpaper/13/e", null, null);
 					//File file = new File(path+"/wallpaper/13/e");
@@ -53,9 +64,28 @@ public class TestActivity extends Activity{
 					//fom.registerObserver("03", path+"/wallpaper/", null, null);
 					//fom.registerObserver("01", path + "/wallpaper/ak1", null,null);
 				
-				con.addShareDevice(path+"/wallpaper", "03", 0);
-				con.addShareDevice(path + "/wallpaper/ak1", "01", 0);
-					
+				//con.addShareDevice(path+"/wallpaper", "03", 0);
+				//con.addShareDevice(path + "/wallpaper/ak1", "01", 0);
+				/*
+				ConflictDetect cd = new ConflictDetect();
+				String local = "local";
+				String remote = "remote";
+				VersionMap localVersionMap = new VersionMap();
+				VersionMap remoteVersionMap = new VersionMap();
+				localVersionMap.put(local, 0);
+				localVersionMap.put(remote, 0);
+				remoteVersionMap.put(remote, 0);
+				remoteVersionMap.put(local, 0);
+				
+				localVersionMap.put(local, 1);
+				cd.detect(localVersionMap, local, remoteVersionMap, remote);
+				
+				remoteVersionMap.put(local, 1);
+				cd.detect(localVersionMap, local, remoteVersionMap, remote);
+				
+				remoteVersionMap.put(remote, 1);
+				cd.detect(localVersionMap, local, remoteVersionMap, remote);
+					*/
 			}
 		});
 		
@@ -66,6 +96,23 @@ public class TestActivity extends Activity{
 				//fom.withdrowObserver("01",path+"/wallpaper/13/e");
 				//fom.withdrowObserver("03",path+"/wallpaper/13");
 				//fom.withdrowObserver("02",path+"/wallpaper/tyy");
+				
+				try {
+					DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(FileConstant.DEFAULTROOTPATH+"/cc")));
+					String line = dis.readUTF();
+					while( line!= null){
+						System.out.println(line);
+						line = dis.readUTF();
+					}
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}catch (EOFException e){
+					System.out.println("file complish reading");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 		

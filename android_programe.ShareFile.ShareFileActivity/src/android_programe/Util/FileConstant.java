@@ -23,6 +23,12 @@ public class FileConstant {
 	
 	public static final int MAKEDIR = 30;
 	
+	public static final int FILEVERSIONMAP = 31;
+	
+	public static final int FILEUPDATE = 32;
+	
+	public static final int DISCONNECT = 33;
+	
 	/**简单粗暴一致性*/
 	public static final int SIMPLECM = 0;
 	
@@ -48,9 +54,20 @@ public class FileConstant {
 	
 	public static final int RENAMEDIRMESSAGE = 17;
 	
+	/**发送文件夹命令*/
+	public static final int SENDDIRMESSAGE = 18;
 	
 	/***/
 	public static final int ISDIR = 0x40000000;
 	
-	public static String ROOTPATH = Environment.getExternalStorageDirectory().getPath();
+	public static final String DEFAULTDIRECTORY = "/SharedMemory";
+	
+	public static final String DEFAULTCACHEDIRECTORY = "/.cache";
+	
+	public static final String ROOTPATH = Environment.getExternalStorageDirectory().getPath();
+	
+	public static final String DEFAULTROOTPATH = ROOTPATH + DEFAULTDIRECTORY;
+	
+	/**默认的文件保存目录*/
+	public static final String DEFAULTSAVEPATH = DEFAULTROOTPATH + DEFAULTCACHEDIRECTORY;
 }

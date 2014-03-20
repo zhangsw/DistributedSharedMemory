@@ -1,0 +1,56 @@
+package android_programe.PsyLine;
+
+import android_programe.Util.FileConstant;
+
+public  class FileTransferHeader {
+	
+	/**
+	 * 发送文件数据前的消息
+	 * @param fileLength	文件长度
+	 * @param fileID	文件id
+	 * @param relativePath	文件相对路径
+	 * @return
+	 */
+	public static String sendFileDataHeader(long fileLength){
+		return FileConstant.FILEDATA + "$SIZE$" + fileLength + "\n";
+	}
+	
+	/**
+	 * 发送文件versionMap前的消息
+	 * @param fileID	文件id
+	 * @param relativePath	文件相对路径
+	 * @return
+	 */
+	public static String sendFileVersionMapHeader(String fileID,String relativePath,String tag){
+		return FileConstant.FILEVERSIONMAP + "$ID$" + fileID + "$TAG$" + tag + "$PATH$" + relativePath + "\n";
+	}
+	
+	public static String sendFileUpdateHeader(){
+		return FileConstant.FILEUPDATE + "\n";
+	}
+	
+	public static String disconnect(){
+		return FileConstant.DISCONNECT + "\n";
+	}
+
+	/**
+	 * 删除文件命令
+	 * @param relativePath
+	 * @return
+	 */
+	public static String deleteFileCmd(String relativePath){
+		return FileConstant.DELETEFILE + "$PATH$" + relativePath+"\n";
+	}
+	
+	public static String fetchFileCmd(String relativePath){
+		return FileConstant.ASKFILE + "$PATH$" + relativePath + "\n";
+	}
+	
+	public static String makeDirCmd(String relativePath){
+		return FileConstant.MAKEDIR + "$PATH$" + relativePath + "\n";
+	}
+	
+	public static String renameFileCmd(String oldRelativePath,String newRelativePath){
+		return FileConstant.RENAMEFILE + "$OLDPATH$" + oldRelativePath + "$NEWPATH$" + newRelativePath + "\n";
+	}
+}
