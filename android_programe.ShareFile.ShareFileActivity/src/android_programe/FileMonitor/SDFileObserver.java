@@ -50,7 +50,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MOVE_SELF:{
-			System.out.println(this.path + ":" + path + "has been move_self");
+		//	System.out.println(this.path + ":" + path + "has been move_self");
 			
 			Message msg = new Message();
 			msg.obj = this.path;
@@ -60,7 +60,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.DELETE_SELF:{
-			System.out.println(this.path + ":" +path+"has been delete_self");
+		//	System.out.println(this.path + ":" +path+"has been delete_self");
 			
 			Message msg = new Message();
 			msg.obj = this.path;
@@ -75,7 +75,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.DELETE:{					//文件被删除
-			System.out.println(this.path + ":" +path+"has been deleted");
+		//	System.out.println(this.path + ":" +path+"has been deleted");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -85,7 +85,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.CREATE:{					//有新文件被创建
-			System.out.println(this.path + ":" +path+"has been created");
+		//	System.out.println(this.path + ":" +path+"has been created");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -105,7 +105,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MOVED_FROM:{
-			System.out.println(this.path + ":" +path+" has been moved from");
+		//	System.out.println(this.path + ":" +path+" has been moved from");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -117,7 +117,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MOVED_TO:{
-			System.out.println(this.path + ":" +path+" has been moved to");
+		//	System.out.println(this.path + ":" +path+" has been moved to");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -128,7 +128,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.CLOSE_WRITE:{
-			System.out.println(this.path + ":" +path+"has been written and closed");
+			//System.out.println(this.path + ":" +path+"has been written and closed");
 			if(path != null){
 				Message msg = new Message();
 				msg.obj = this.path + "/" + path;
@@ -145,7 +145,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case (FileObserver.CREATE|FileConstant.ISDIR):{		
-			System.out.println(this.path + ":" +path+" dir has been created");
+		//	System.out.println(this.path + ":" +path+" dir has been created");
 			
 			
 			Message msg = new Message();
@@ -157,7 +157,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case (FileObserver.DELETE|FileConstant.ISDIR):{
-			System.out.println(this.path + ":" +path + " dir has been deleted");
+			//System.out.println(this.path + ":" +path + " dir has been deleted");
 			
 			
 			Message msg = new Message();
@@ -168,7 +168,7 @@ public class SDFileObserver extends FileObserver{
 		}
 		
 		case FileObserver.MOVED_FROM|FileConstant.ISDIR:{
-			System.out.println(this.path + ":" +path+" dir has been moved from");
+			//System.out.println(this.path + ":" +path+" dir has been moved from");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -179,7 +179,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MOVED_TO|FileConstant.ISDIR:{
-			System.out.println(this.path + ":" +path+" dir has been moved to");
+			//System.out.println(this.path + ":" +path+" dir has been moved to");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -189,7 +189,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MOVE_SELF|FileConstant.ISDIR:{
-			System.out.println(this.path + ":" + path +" dir has been move_SELF");
+			//System.out.println(this.path + ":" + path +" dir has been move_SELF");
 			
 			Message msg = new Message();
 			msg.obj = this.path;
@@ -203,7 +203,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.DELETE_SELF|FileConstant.ISDIR:{
-			System.out.println(this.path + ":" + path + " dir has been deleted_self");
+			//System.out.println(this.path + ":" + path + " dir has been deleted_self");
 		}break;
 		
 		case FileObserver.ALL_EVENTS:{

@@ -29,6 +29,9 @@ public class FileConstant {
 	
 	public static final int DISCONNECT = 33;
 	
+	/**同步准备就绪*/
+	public static final int SYNREADY = 34;
+	
 	/**简单粗暴一致性*/
 	public static final int SIMPLECM = 0;
 	
@@ -60,14 +63,25 @@ public class FileConstant {
 	/***/
 	public static final int ISDIR = 0x40000000;
 	
+	public static final String DEFAULTAPPDIRECTORY = "/SharedMemoryActivity";
+	
 	public static final String DEFAULTDIRECTORY = "/SharedMemory";
+	
+	public static final String DEFAULTVERSIONLOG = "/VersionLog";
 	
 	public static final String DEFAULTCACHEDIRECTORY = "/.cache";
 	
-	public static final String ROOTPATH = Environment.getExternalStorageDirectory().getPath();
+	public static final String STORAGEROOTPATH = Environment.getExternalStorageDirectory().getPath();
 	
-	public static final String DEFAULTROOTPATH = ROOTPATH + DEFAULTDIRECTORY;
+	/**默认的app路径*/
+	public static final String DEFAULTAPPPATH = STORAGEROOTPATH + DEFAULTAPPDIRECTORY;
+	
+	/**默认的version log保存文件夹目录*/
+	public static final String DEFAULTVERSIONLOGPATH = DEFAULTAPPPATH + DEFAULTVERSIONLOG;
+	
+	/**默认的共享文件夹目录*/
+	public static final String DEFAULTSHAREPATH = DEFAULTAPPPATH + DEFAULTDIRECTORY;
 	
 	/**默认的文件保存目录*/
-	public static final String DEFAULTSAVEPATH = DEFAULTROOTPATH + DEFAULTCACHEDIRECTORY;
+	public static final String DEFAULTSAVEPATH = DEFAULTSHAREPATH + DEFAULTCACHEDIRECTORY;
 }

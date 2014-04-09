@@ -98,7 +98,7 @@ public class TestActivity extends Activity{
 				//fom.withdrowObserver("02",path+"/wallpaper/tyy");
 				
 				try {
-					DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(FileConstant.DEFAULTROOTPATH+"/cc")));
+					DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(FileConstant.DEFAULTSHAREPATH+"/cc")));
 					String line = dis.readUTF();
 					while( line!= null){
 						System.out.println(line);

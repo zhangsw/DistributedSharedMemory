@@ -1,8 +1,8 @@
 package android_programe.MemoryManager;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 
 import android.os.Handler;
@@ -15,6 +15,7 @@ import android_programe.FileSystem.MyFileObserver;
 import android_programe.FileSystem.VersionManager;
 import android_programe.FileSystem.VersionMap;
 import android_programe.LogLine.LogLine;
+import android_programe.Storage.StorageOperator;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 import android_programe.Util.FileUtil;
@@ -36,6 +37,8 @@ public class MemoryManager implements IMemoryManager{
 	private FileManager fileManager;
 	private ConflictManager conflictManager;	//冲突管理，用于判断是否发生冲突，以及发生冲突后需要进行的操作
 	
+	private ArrayList <String> readyForSyn;
+	
 	private static String VERSIONMAP = "one";	//第一次发送versionMap的标记
 	private static String VERSIONMAPACK = "two";	//已经发送过versionMap,接收到的是回应，用于判断对方是否已经知道了自己的versionMap
 	
@@ -54,6 +57,8 @@ public class MemoryManager implements IMemoryManager{
 		localDeviceId = id;
 		fileManager = new FileManager(defaultRootPath,localDeviceId);
 		conflictManager = new ConflictManager(this,fileManager);
+		
+		readyForSyn = new ArrayList<String>();
 	}
 	
 	/**
@@ -69,7 +74,7 @@ public class MemoryManager implements IMemoryManager{
 	 * @return
 	 */
 	private String getRootPath(){
-		String rootPath = FileConstant.DEFAULTROOTPATH;
+		String rootPath = FileConstant.DEFAULTSHAREPATH;
 		return rootPath;
 	}
 	
@@ -158,21 +163,25 @@ public class MemoryManager implements IMemoryManager{
 		}
 		else{	//本地不存在该文件的文件结点
 			//TODO
-			//创建新的文件结点
-			boolean success = fileManager.createEmptyFileNode(path, fileID);
-			if(success){
-				//更新这个文件结点的versionMap，本地version为-1（不存在该文件），远端version则为发送过来的
-				//更新本地保存的远端的版本号
-				fileManager.updateVersionMap(path, target, remoteVersionMap.getVersionNumber(target));
-				//修改远端发过来的map中自己的版本号
-				remoteVersionMap.put(localDeviceId, VersionManager.FILENOTEXIST);
-				//将修改的versionMap转发到其他设备
-				List<String>targets = fileManager.getMyFileObserver(path).getTargetsList();
-				//转发versionMap
-				//forwardVersionMap(targets,target,fileID,remoteVersionMap,relativePath);
-				//向target请求该文件
-				fetchFile(target,relativePath);
-			}	
+			if(tag.equals(VERSIONMAP)){
+				//创建新的文件结点
+				boolean success = fileManager.createEmptyFileNode(path, fileID);
+				if(success){
+					//更新这个文件结点的versionMap，本地version为-1（不存在该文件），远端version则为发送过来的
+					//更新本地保存的远端的版本号
+					fileManager.updateVersionMap(path, target, remoteVersionMap.getVersionNumber(target));
+					//修改远端发过来的map中自己的版本号
+					remoteVersionMap.put(localDeviceId, VersionManager.FILENOTEXIST);
+					//将修改的versionMap转发到其他设备
+					List<String>targets = fileManager.getMyFileObserver(path).getTargetsList();
+					//转发versionMap
+					//forwardVersionMap(targets,target,fileID,remoteVersionMap,relativePath);
+					//向target请求该文件
+					fetchFile(target,relativePath);
+				}
+			}else{
+				//忽略
+			}
 		}
 		
 		//TODO
@@ -232,15 +241,13 @@ public class MemoryManager implements IMemoryManager{
 		}
 		else{
 			//可能是冲突文件
-			String fileName = file.getName();
-			long time = fileMetaData.getModifiedTime();
-			String sTime = "("+FileUtil.getTimeFromLong(time)+")";
-			if(fileName.indexOf(sTime) == 0){
+			if(conflictManager.isConflictFile(target, fileMetaData, file)){
 				//是按照冲突重命名机制命名的文件
-				conflictManager.receiveConflictFileData(target, fileMetaData, file,fileName.substring(sTime.length()));
+				System.out.println("----MemoryManager----receive conflictFile");
+				conflictManager.receiveConflictFileData(target, fileMetaData, file);
 				//发送本地收到文件通知
 				sendFileUpdateInform(fileManager.getMyFileObserver(defaultRootPath + relativePath).getTargetsList(),fileMetaData);
-				System.out.println("has sended file update inform");
+				
 			}
 			else{	
 				//TODO
@@ -329,7 +336,7 @@ public class MemoryManager implements IMemoryManager{
 			File file = new File(absolutePath);
 			if(file.exists()){				//存在请求的文件，可以进行发送
 				//TODO
-				System.out.println("file exist，before send");
+				System.out.println("----MemoryManager----file exist，before send");
 				sendFile(target,absolutePath,relativePath);			//文件路径？？？
 				return true;
 			}
@@ -337,7 +344,9 @@ public class MemoryManager implements IMemoryManager{
 				//判断请求的是否是冲突文件
 				if(conflictManager.conflictFileNodeExist(absolutePath)){	//请求的是冲突文件
 					//发送冲突文件
+					
 					MyFileObserver ob = conflictManager.getConflictFileNode(absolutePath).getLocalFileObserver();
+					System.out.println("----MemoryManager----ask conflictFile,relativePath is:" + ob.getFileMetaData().getRelativePath());
 					sendFile(target,ob.getPath(),ob.getFileMetaData().getRelativePath());
 					return true;
 				}
@@ -425,6 +434,28 @@ public class MemoryManager implements IMemoryManager{
 	}
 	
 	/**
+	 * 发送同步就绪信息
+	 */
+	private void sendSynReady(String target){
+		logLine.sendSynReady(target);
+	}
+	
+	/**
+	 * 接收到同步就绪信息
+	 * @param target
+	 */
+	public void receiveSynReady(String target){
+		if(readyForSyn.contains(localDeviceId + target)){
+			//本地已经就绪，可以开始同步
+			readyForSyn.remove(localDeviceId + target);
+			synchronizeFiles(target);
+			
+		}else{
+			readyForSyn.add(target);
+		}
+	}
+	
+	/**
 	 * 构建一个文件结点
 	 * @param fileID	文件的id
 	 * @param relaitvePath	文件的相对路径
@@ -441,15 +472,56 @@ public class MemoryManager implements IMemoryManager{
 		System.out.println("enter Consistency addShareDevice-----");
 		//TODO
 		if(!shareInfList.contains(si)){						//不能如此简单的判断！！！
+			System.out.println("----MemoryManager----shareInfo not existed,add it");
 			shareInfList.add(si);
-			si.start();
+		}
+		initializeVersionNumber(target);
+		//本地已经初始化完毕，发送初始化完毕信息
+		//TODO
+		sendSynReady(target);
+		if(readyForSyn.contains(target)){
+			//对方已经就绪，可以进行同步
+			readyForSyn.remove(target);
+			synchronizeFiles(target);
+		}else{
+			//还没确认对方是否已经就绪，先不同步，并保存自己同对方的状态为ready
+			readyForSyn.add(localDeviceId + target);
+		}
+	}
+	
+	/**
+	 * 初始化对象的versionNumber
+	 * @param target
+	 */
+	private void initializeVersionNumber(String target){
+		File file = new File(FileConstant.DEFAULTVERSIONLOGPATH + "/" + target);
+		if(file.exists()){
+			try {
+				System.out.println("versionlog exists,initialize versionlog");
+				BufferedReader br = new BufferedReader(new FileReader(file));
+				//DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
+				LinkedHashMap<String,Integer> versionMap = StorageOperator.readVersionNumber(br);
+				System.out.println("----MemoryManager----initializeVersionNumber:vertsionMap's size is:" + versionMap.size());
+				Iterator<Entry<String, Integer>> iter = versionMap.entrySet().iterator();
+				while(iter.hasNext()){
+					Map.Entry<String,Integer> entry =(Map.Entry<String,Integer>)iter.next();
+					System.out.println("----MemoryManager----initializeVersionNumber: " + entry.getKey() + ":" + entry.getValue());
+					fileManager.updateVersionMap(entry.getKey(), target, entry.getValue());
+				}
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
 	public synchronized void removeShareDevice(String target){
 		int index = getIndexByName(target);
 		if(index != -1){
-			saveShareInformation();
+			saveShareInformation(target);
 			ShareInfo sio =  shareInfList.get(index);
 			fileManager.withdrowObserver(target, sio.getSharedFilePath());
 			shareInfList.remove(index);
@@ -475,11 +547,12 @@ public class MemoryManager implements IMemoryManager{
 	public boolean connect(String ip) throws IOException{
 		if(logLine.connect(ip)){
 			//TODO
+			/*
 			String targetName = logLine.getDeviceNameByID(ip);
 			System.out.println("has connected: " + ip + ",before synchronzeFiles,targetname is :" + targetName);
 			if(targetName != null){
 				synchronizeFiles(targetName);
-			}
+			}*/
 			return true;
 		}
 		else return false;
@@ -551,7 +624,7 @@ public class MemoryManager implements IMemoryManager{
 			if(logLine.disconnect(target)){
 				//TODO
 				System.out.println("logline has disconnected");
-				saveShareInformation();
+				saveShareInformation(target);
 				ShareInfo s = (ShareInfo)(shareInfList.get(index));
 				fileManager.withdrowObserver(target, s.getSharedFilePath());
 				shareInfList.remove(index);
@@ -570,7 +643,7 @@ public class MemoryManager implements IMemoryManager{
 		// TODO Auto-generated method stub
 		int index = getIndexByName(targetName);
 		if(index != -1){
-			saveShareInformation();
+			saveShareInformation(targetName);
 			ShareInfo s = (ShareInfo)(shareInfList.get(index));
 			fileManager.withdrowObserver(targetName, s.getSharedFilePath());
 			shareInfList.remove(index);
@@ -578,13 +651,59 @@ public class MemoryManager implements IMemoryManager{
 	}
 	
 	private void saveShareInformation(){
-		System.out.println("sava share information");
+		
 	}
+	
+	/**
+	 * 保存对象的文件版本号
+	 * @param target
+	 */
+	private void saveShareInformation(String target){
+		System.out.println("save share information,target is " + target);
+		//将target的信息保存在本地文件中
+		int index = getIndexByName(target);
+		if(index != -1){
+			ShareInfo s = (ShareInfo)(shareInfList.get(index));
+			String path = s.getSharedFilePath();
+			File file = new File(FileConstant.DEFAULTVERSIONLOGPATH + "/" + target);
+			BufferedWriter bw;
+			try {
+				bw = new BufferedWriter(new FileWriter(file));
+				MyFileObserver mo= fileManager.getMyFileObserver(path);
+				if(mo != null){
+					saveVersionNumber(bw,mo,target);
+				}
+				
+				bw.flush();
+				bw.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void saveVersionNumber(BufferedWriter bw,MyFileObserver mo,String target) throws IOException{
+		int versionNumber = mo.getVersionNumber(target);
+		StorageOperator.writeVersionNumber(bw, mo.getPath(), versionNumber);
+		if(mo.hasChild()){
+			
+			ArrayList<MyFileObserver> list = mo.getChildAll();
+			//System.out.println(mo.getPath()+" has child,number is " + list.size());
+			for(int i=0;i<list.size();i++){
+				System.out.println(list.get(i).getPath());
+				saveVersionNumber(bw,list.get(i),target);
+			}
+		}
+	}
+	
 	
 	private int getIndexByName(String target){
 		int i = 0;
 		for(;i<shareInfList.size();i++){
-			System.out.println("----" + shareInfList.get(i).getTarget());
 			if(((ShareInfo)(shareInfList.get(i))).getTarget().equals(target))
 				return i;
 		}

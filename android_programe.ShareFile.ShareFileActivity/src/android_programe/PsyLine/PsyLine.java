@@ -85,6 +85,7 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		if(index != -1){
 			System.out.println("enter psyline's disconnect");
 			SocketIO sio = (SocketIO)socketList.get(index);
+			sio.sendDisconnectMsg();
 			sio.close();
 			socketList.remove(index);
 			return true;
@@ -355,8 +356,22 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	
 	public void connectionFailure(String id) {
 		// TODO Auto-generated method stub
-		System.out.println("connection failure,delete connection information");
+		System.out.println("-----PsyLine-----connection failure,delete connection information");
 		receiveDisconnect(id);
+	}
+
+
+	public void sendSynReady(String id) {
+		// TODO Auto-generated method stub
+		int index = getIndexByTargetID(id);
+		if(index != -1){
+			SocketIO sio = (SocketIO)socketList.get(index);
+			sio.sendSnyReady();
+		}
+	}
+	
+	public void receiveSynReady(String id){
+		logline.receiveSynReady(id);
 	}
 	
 

@@ -4,6 +4,8 @@ import java.io.File;
 
 public class FileOperateHelper {
 
+	
+	
 	//文件是否存在
 	public static boolean fileExist(String path){
         File file = new File(path);
@@ -41,7 +43,8 @@ public class FileOperateHelper {
 	
 	public static boolean renameFile(String oldPath,String newPath){
 		File file = new File(oldPath);
-		return file.renameTo(new File(newPath));
+		File newFile = new File(newPath);
+		return file.renameTo(newFile);
 	}
 	
 	public static boolean deleteFile(String path){

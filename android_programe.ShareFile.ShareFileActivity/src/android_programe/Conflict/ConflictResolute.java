@@ -14,5 +14,7 @@ public abstract class ConflictResolute {
 	//两个文件发生冲突
 	public abstract void resoluteConfliction(String fildID,VersionMap localVersionMap,String localDeviceId,VersionMap remoteVersionMap,String remoteDeviceId,String relativePath,IResoluteOperator iro);
 	
-	public abstract void receiveConflictFileData(String target, FileMetaData fileMetaData,File file,String orginalName,IResoluteOperator iro);
+	public abstract boolean isConflictFile(String target,FileMetaData fileMetaData,File file);
+	
+	public abstract void receiveConflictFileData(String target, FileMetaData fileMetaData,File file,IResoluteOperator iro);
 }

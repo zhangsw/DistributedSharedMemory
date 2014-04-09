@@ -54,10 +54,17 @@ public class ConflictManager implements IResoluteOperator{
 	}
 	
 	/**
+	 * 判断收到的文件是否是以冲突消解机制重命名的冲突文件
+	 */
+	public boolean isConflictFile(String id,FileMetaData fileMetaData,File file){
+		return conflictResolute.isConflictFile(id, fileMetaData, file);
+	}
+	
+	/**
 	 * 收到冲突文件的数据
 	 */
-	public void receiveConflictFileData(String target,FileMetaData fileMetaData,File file,String orginalName){
-		conflictResolute.receiveConflictFileData(target, fileMetaData, file,orginalName,this);
+	public void receiveConflictFileData(String target,FileMetaData fileMetaData,File file){
+		conflictResolute.receiveConflictFileData(target, fileMetaData, file,this);
 	}
 	
 	public boolean conflictFileNodeExist(String path){
@@ -106,6 +113,7 @@ public class ConflictManager implements IResoluteOperator{
 	public void renameLocalFile(String fileID, String oldRelativePath,
 			String newRelativePath) {
 		// TODO Auto-generated method stub
+		System.out.println("----ConflictManager----enter renameLocalFile");
 		imm.renameLocalFile(fileID, oldRelativePath, newRelativePath);
 		
 	}

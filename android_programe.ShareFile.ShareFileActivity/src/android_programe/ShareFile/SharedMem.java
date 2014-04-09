@@ -17,6 +17,8 @@ import android.os.Parcel;
 import android.os.RemoteException;
 import android.util.Log;
 import android_programe.MemoryManager.MemoryManager;
+import android_programe.Util.FileConstant;
+import android_programe.Util.FileOperateHelper;
 
 
 public class SharedMem extends Service{
@@ -42,6 +44,7 @@ public class SharedMem extends Service{
 		System.out.println("enter service oncreate");
 		try {
 			localID = getLocalAddress();
+			initialize();
 			memManager = new MemoryManager(localID);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -98,6 +101,15 @@ public class SharedMem extends Service{
 	
 	public void writeFile(String filename){
 		
+	}
+	
+	
+	private void initialize(){
+		//初始化，创建文件夹
+		FileOperateHelper.makeDir(FileConstant.DEFAULTAPPPATH);
+		FileOperateHelper.makeDir(FileConstant.DEFAULTSHAREPATH);
+		FileOperateHelper.makeDir(FileConstant.DEFAULTVERSIONLOGPATH);
+		FileOperateHelper.makeDir(FileConstant.DEFAULTSAVEPATH);
 	}
 	
 	/**

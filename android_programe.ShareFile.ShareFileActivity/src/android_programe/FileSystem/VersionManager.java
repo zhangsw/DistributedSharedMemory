@@ -38,13 +38,13 @@ public class VersionManager {
 	//初始化versionMap,由于需要保存本地文件版本号，因此，map中至少有一个设备
 	public VersionManager(String deviceName,String path){
 		if(FileOperateHelper.fileExist(path)){
-			System.out.println("file exist,initialize versionMap and fileMetaData");
 			versionMap = new VersionMap();
+			System.out.println("----VersionManager----File:" + path + " exists");
 			versionMap.put(deviceName, INITIAL_VERSION_NUMBER);
 			//为文件生成全局唯一的id
 			String fileID = UUID.randomUUID().toString();
 			long fileLength = FileOperateHelper.getFileLength(path);
-			String relaitvePath = path.substring(FileConstant.DEFAULTROOTPATH.length());
+			String relaitvePath = path.substring(FileConstant.DEFAULTSHAREPATH.length());
 			fileMetaData = new FileMetaData(fileID,INITIAL_VERSION_NUMBER, relaitvePath, path, fileLength, deviceName,FileOperateHelper.getFileModifiedTime(path));
 		}
 		else{

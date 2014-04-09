@@ -38,7 +38,6 @@ public class PsyTcpClient implements FileTransfer{
 			try {
 				System.out.println("ip is " + ip + " test");
 				s.connect(new InetSocketAddress(ip,FileConstant.TCPPORT), timeout);
-				System.out.println("connected");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

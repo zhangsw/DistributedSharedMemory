@@ -3,7 +3,10 @@ package android_programe.MemoryManager;
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.Assert;
+
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android_programe.FileMonitor.IEventTranslate;
@@ -11,7 +14,7 @@ import android_programe.FileSystem.IFileManager;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileUtil;
 
-public class ShareInfo extends Thread{
+public class ShareInfo{
 	private String sharedFilePath;
 	private String target;
 	private int type;		//共享类型，暂时为simple
@@ -20,6 +23,8 @@ public class ShareInfo extends Thread{
 	private Handler handlerFa;
 	private IFileManager fom;
 	private Handler handlerCh;
+	private HandlerThread handlerThread;
+	private String threadName;
 	public ShareInfo(){
 		
 	}
@@ -37,12 +42,17 @@ public class ShareInfo extends Thread{
 		switch(type){
 		case FileConstant.SIMPLECM:{
 			conRule = new SimpleConsistencyRule();
-			System.out.println("simpleCm has been started----");
+			//System.out.println("simpleCm has been started----");
 		}break;
-		}		
-		if(handlerFa == null)
-			System.out.println("handlerFa is null------");
-		else System.out.println("handlerFa is not null-----");
+		}
+		Assert.assertNotNull("----ShareInfo----handlerFa is null", handlerFa);
+		
+		threadName = target + "ShareThread";
+		handlerThread = new HandlerThread(threadName);
+		handlerThread.start();
+		handlerCh = new MyHandler(handlerThread.getLooper());
+		this.fom.registerObserver(target, sharedFilePath, handlerCh, null);
+		
 	}
 	
 	public String getSharedFilePath(){
@@ -97,109 +107,6 @@ public class ShareInfo extends Thread{
 		return false;
 	}
 	
-	
-	
-	
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		super.run();
-		Looper.prepare();
-		
-		handlerCh = new Handler(){
-
-			@Override
-			public void handleMessage(Message msg) {
-				// TODO Auto-generated method stub
-				super.handleMessage(msg);
-				String obj = msg.obj.toString();
-				switch(msg.what){
-				case IEventTranslate.FILEMODIFIED:				//文件被修改
-				case IEventTranslate.FILEMOVETO:{					//文件移入
-					if(conRule.sendFile(obj)){
-						String relativePath = obj.substring(FileConstant.DEFAULTROOTPATH.length());
-						fileModifiedMessage(target,FileConstant.SENDFILEMESSAGE,obj,relativePath,handlerFa);
-					}	
-				}break;
-				
-				case IEventTranslate.FILEDELETE:				//文件删除
-				case IEventTranslate.FILEMOVEFROM:{				//文件移入
-					if(conRule.deleteFile(obj)){
-						String relativePath = obj.substring(FileConstant.DEFAULTROOTPATH.length());
-						deleteMessage(target,FileConstant.DELETEFILEMESSAGE,relativePath,handlerFa);
-					}
-				}break;
-				
-				case IEventTranslate.FILERENAMEORMOVE:{			//文件重命名或者移动
-					int index = obj.indexOf("$/@@/$");
-					String oldPath = obj.substring(0, index);
-					String newPath = obj.substring(index+6);
-					if(getFatherPath(oldPath).equals(getFatherPath(newPath)) && conRule.renameFile(oldPath,newPath)){
-						renameOrMoveMessage(target,FileConstant.RENAMEFILEMESSAGE,oldPath.substring(FileConstant.DEFAULTROOTPATH.length()),newPath.substring(FileConstant.DEFAULTROOTPATH.length()),handlerFa);
-					}
-					else if(!getFatherPath(oldPath).equals(getFatherPath(newPath)) && conRule.moveFile(oldPath,newPath))
-						renameOrMoveMessage(target,FileConstant.MOVEFILEMESSAGE,oldPath.substring(FileConstant.DEFAULTROOTPATH.length()),newPath.substring(FileConstant.DEFAULTROOTPATH.length()),handlerFa);
-					/*
-					else if(isSubDirectory(oldPath) && conRule.deleteFile(oldPath)){
-						
-						deleteMessage(target,FileConstant.DELETEFILEMESSAGE,oldPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
-					}
-					else if(isSubDirectory(newPath) && conRule.sendFile(newPath))
-						fileModifiedMessage(target,FileConstant.SENDFILEMESSAGE,newPath,newPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
-						*/
-				}break;
-				
-				case IEventTranslate.DIRCREATE:{			//文件夹创建
-					if(conRule.createDirectory(obj)){
-						System.out.println("dir has been created");
-						String relativePath = obj.substring(FileConstant.DEFAULTROOTPATH.length());
-						createDirMessage(target,FileConstant.CREATEDIRMESSAGE,obj,relativePath,handlerFa);
-					}
-				}break;
-				
-				case IEventTranslate.DIRDELETE:				//文件夹删除
-				case IEventTranslate.DIRMOVEFROM:{			//文件夹移除
-					if(conRule.deleteDirectory(obj)){
-						String relativePath = obj.substring(FileConstant.DEFAULTROOTPATH.length());
-						deleteMessage(target,FileConstant.DELETEDIRMESSAGE,relativePath,handlerFa);
-					}
-				}break;
-				
-				case IEventTranslate.DIRMOVETO:{			//文件夹移入
-					if(conRule.sendDirectory(obj)){
-						System.out.println("dir has been move to");
-						String relativePath = obj.substring(FileConstant.DEFAULTROOTPATH.length());
-						dirModifiedMessage(target,FileConstant.SENDDIRMESSAGE,obj,relativePath,handlerFa);
-					}
-				}break;
-				
-				case IEventTranslate.DIRRENAMEORMOVE:{			//文件夹重命名或移动
-					int index = obj.indexOf("$/@@/$");
-					String oldPath = obj.substring(0, index);
-					String newPath = obj.substring(index+6);
-					if(getFatherPath(oldPath).equals(getFatherPath(newPath)) && conRule.renameDirectory(oldPath,newPath)){
-						renameOrMoveMessage(target,FileConstant.RENAMEDIRMESSAGE,oldPath.substring(FileConstant.DEFAULTROOTPATH.length()),newPath.substring(FileConstant.DEFAULTROOTPATH.length()),handlerFa);
-					}
-					else if(conRule.moveDirectory(oldPath,newPath))
-						renameOrMoveMessage(target,FileConstant.MOVEDIRMESSAGE,oldPath.substring(FileConstant.DEFAULTROOTPATH.length()),newPath.substring(FileConstant.DEFAULTROOTPATH.length()),handlerFa);
-					/*
-					else if(isSubDirectory(oldPath) && conRule.deleteDirectory(oldPath))
-						deleteMessage(target,FileConstant.DELETEDIRMESSAGE,oldPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
-					else if(isSubDirectory(newPath) && conRule.sendDirectory(newPath))
-						dirModifiedMessage(target,FileConstant.CREATEDIRMESSAGE,newPath,newPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
-						*/
-				}break;
-				}
-				
-			}
-			
-		};
-		
-		fom.registerObserver(target, sharedFilePath, handlerCh, null);
-		Looper.loop();
-		
-	}
-	
 	private boolean isSubDirectory(String path){
 		if(path.startsWith(sharedFilePath + "/"))
 			return true;
@@ -247,6 +154,97 @@ public class ShareInfo extends Thread{
 	private String getFatherPath(String path){
 		int index  = path.lastIndexOf("/");
 		return path.substring(0, index);
+	}
+	
+	private class MyHandler extends Handler{
+		public MyHandler(Looper looper){
+			super(looper);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			// TODO Auto-generated method stub
+			super.handleMessage(msg);
+			super.handleMessage(msg);
+			String obj = msg.obj.toString();
+			switch(msg.what){
+			case IEventTranslate.FILEMODIFIED:				//文件被修改
+			case IEventTranslate.FILEMOVETO:{					//文件移入
+				if(conRule.sendFile(obj)){
+					String relativePath = obj.substring(FileConstant.DEFAULTSHAREPATH.length());
+					fileModifiedMessage(target,FileConstant.SENDFILEMESSAGE,obj,relativePath,handlerFa);
+				}	
+			}break;
+			
+			case IEventTranslate.FILEDELETE:				//文件删除
+			case IEventTranslate.FILEMOVEFROM:{				//文件移入
+				if(conRule.deleteFile(obj)){
+					String relativePath = obj.substring(FileConstant.DEFAULTSHAREPATH.length());
+					deleteMessage(target,FileConstant.DELETEFILEMESSAGE,relativePath,handlerFa);
+				}
+			}break;
+			
+			case IEventTranslate.FILERENAMEORMOVE:{			//文件重命名或者移动
+				int index = obj.indexOf("$/@@/$");
+				String oldPath = obj.substring(0, index);
+				String newPath = obj.substring(index+6);
+				if(getFatherPath(oldPath).equals(getFatherPath(newPath)) && conRule.renameFile(oldPath,newPath)){
+					renameOrMoveMessage(target,FileConstant.RENAMEFILEMESSAGE,oldPath.substring(FileConstant.DEFAULTSHAREPATH.length()),newPath.substring(FileConstant.DEFAULTSHAREPATH.length()),handlerFa);
+				}
+				else if(!getFatherPath(oldPath).equals(getFatherPath(newPath)) && conRule.moveFile(oldPath,newPath))
+					renameOrMoveMessage(target,FileConstant.MOVEFILEMESSAGE,oldPath.substring(FileConstant.DEFAULTSHAREPATH.length()),newPath.substring(FileConstant.DEFAULTSHAREPATH.length()),handlerFa);
+				/*
+				else if(isSubDirectory(oldPath) && conRule.deleteFile(oldPath)){
+					
+					deleteMessage(target,FileConstant.DELETEFILEMESSAGE,oldPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
+				}
+				else if(isSubDirectory(newPath) && conRule.sendFile(newPath))
+					fileModifiedMessage(target,FileConstant.SENDFILEMESSAGE,newPath,newPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
+					*/
+			}break;
+			
+			case IEventTranslate.DIRCREATE:{			//文件夹创建
+				if(conRule.createDirectory(obj)){
+					System.out.println("dir has been created");
+					String relativePath = obj.substring(FileConstant.DEFAULTSHAREPATH.length());
+					createDirMessage(target,FileConstant.CREATEDIRMESSAGE,obj,relativePath,handlerFa);
+				}
+			}break;
+			
+			case IEventTranslate.DIRDELETE:				//文件夹删除
+			case IEventTranslate.DIRMOVEFROM:{			//文件夹移除
+				if(conRule.deleteDirectory(obj)){
+					String relativePath = obj.substring(FileConstant.DEFAULTSHAREPATH.length());
+					deleteMessage(target,FileConstant.DELETEDIRMESSAGE,relativePath,handlerFa);
+				}
+			}break;
+			
+			case IEventTranslate.DIRMOVETO:{			//文件夹移入
+				if(conRule.sendDirectory(obj)){
+					System.out.println("dir has been move to");
+					String relativePath = obj.substring(FileConstant.DEFAULTSHAREPATH.length());
+					dirModifiedMessage(target,FileConstant.SENDDIRMESSAGE,obj,relativePath,handlerFa);
+				}
+			}break;
+			
+			case IEventTranslate.DIRRENAMEORMOVE:{			//文件夹重命名或移动
+				int index = obj.indexOf("$/@@/$");
+				String oldPath = obj.substring(0, index);
+				String newPath = obj.substring(index+6);
+				if(getFatherPath(oldPath).equals(getFatherPath(newPath)) && conRule.renameDirectory(oldPath,newPath)){
+					renameOrMoveMessage(target,FileConstant.RENAMEDIRMESSAGE,oldPath.substring(FileConstant.DEFAULTSHAREPATH.length()),newPath.substring(FileConstant.DEFAULTSHAREPATH.length()),handlerFa);
+				}
+				else if(conRule.moveDirectory(oldPath,newPath))
+					renameOrMoveMessage(target,FileConstant.MOVEDIRMESSAGE,oldPath.substring(FileConstant.DEFAULTSHAREPATH.length()),newPath.substring(FileConstant.DEFAULTSHAREPATH.length()),handlerFa);
+				/*
+				else if(isSubDirectory(oldPath) && conRule.deleteDirectory(oldPath))
+					deleteMessage(target,FileConstant.DELETEDIRMESSAGE,oldPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
+				else if(isSubDirectory(newPath) && conRule.sendDirectory(newPath))
+					dirModifiedMessage(target,FileConstant.CREATEDIRMESSAGE,newPath,newPath.substring(FileConstant.ROOTPATH.length()),handlerFa);
+					*/
+			}break;
+			}
+		}
 	}
 	
 }

@@ -32,6 +32,14 @@ public  class FileTransferHeader {
 	public static String disconnect(){
 		return FileConstant.DISCONNECT + "\n";
 	}
+	
+	/**
+	 * 本地已初始化version完毕，可以进行同步
+	 * @return
+	 */
+	public static String synReady(){
+		return FileConstant.SYNREADY + "\n";
+	}
 
 	/**
 	 * 删除文件命令

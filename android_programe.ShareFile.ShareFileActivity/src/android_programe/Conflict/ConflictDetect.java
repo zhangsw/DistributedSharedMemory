@@ -42,7 +42,7 @@ public class ConflictDetect {
 			if(remoteNumberInLocalVersion < remoteNumberInRemoteVersion){	//本地保存的远端版本号小于远端保存的远端版本号，即本地还未获得远端的版本更新
 				//发生冲突,双方在都未获得对方的更新的情况下，在各自的设备上发生了修改
 				//TODO
-				System.out.println("---conflicti occurs---");
+				System.out.println("---conflict occurs---");
 				return ConflictManager.CONFLICT;
 				
 			}

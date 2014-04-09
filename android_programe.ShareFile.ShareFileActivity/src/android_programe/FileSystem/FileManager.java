@@ -45,7 +45,7 @@ public class FileManager implements IFileManager {
 		globalMsgHandler = new GlobalMsgHandler(handlerThread.getLooper());
 		Assert.assertNotNull("globalMessageHandler is null,check it!!", globalMsgHandler);
 		dispenseMsgTag = true;
-		System.out.println("before initializeObservers");
+		//System.out.println("before initializeObservers");
 		this.localDeviceId = localDeviceId;
 		this.defaultRootPath = defaultRootPath;
 		//初始化，对默认目录进行监听
@@ -63,22 +63,21 @@ public class FileManager implements IFileManager {
 	 * @return
 	 */
 	public boolean createEmptyFileNode(String path,String fileID){
-		if(mObservers.containsKey(path)) return false;
+		if(path == null || mObservers.containsKey(path)) return false;
 		else{
 			//获得父结点路径
 			String fatherPath = getFatherPath(path);
-			if(mObservers.containsKey(fatherPath)){
-				//存在父结点
-				MyFileObserver m = new MyFileObserver(path,localDeviceId,globalMsgHandler,this,mObservers.get(fatherPath));
-				mObservers.put(path, m);
-			}
-			else{
+			MyFileObserver fatherObserver = mObservers.get(fatherPath);
+			if(fatherObserver == null){
 				//不存在父结点
 				//先构建父节点
 				createEmptyFileNode(fatherPath,null);
-				MyFileObserver m = new MyFileObserver(path,localDeviceId,globalMsgHandler,this,mObservers.get(fatherPath));
-				mObservers.put(fatherPath, m);
+				fatherObserver = mObservers.get(fatherPath);
 			}
+			//存在父结点
+			MyFileObserver m = new MyFileObserver(path,localDeviceId,globalMsgHandler,this,fatherObserver);
+			fatherObserver.addChildObserver(m);
+			mObservers.put(path, m);
 			//TODO 文件的id是否需要有待考证 
 			return true;
 		}
@@ -104,6 +103,7 @@ public class FileManager implements IFileManager {
 	
 	public boolean updateVersionMap(String path,String deviceId,int versionNumber){
 		if(mObservers.containsKey(path)){	//存在文件结点
+			System.out.println("----FileManager----updateVersionMap:observer exists");
 			mObservers.get(path).updateVersionNumber(deviceId, versionNumber);
 			return true;
 		}else return false;
@@ -192,15 +192,12 @@ public class FileManager implements IFileManager {
 	
 	//初始化file tree
 	private void initializeObservers(String path,String localDeviceId){
-		if(!FileOperateHelper.fileExist(path)){			//在默认路径下没有文件夹，创建默认文件夹，以及一个temp文件夹
-			FileOperateHelper.makeDir(path);
-			FileOperateHelper.makeDir(path+FileConstant.DEFAULTCACHEDIRECTORY);
-		}
 		registerObserver(localDeviceId,path);
 	}
 	
 	private MyFileObserver registerObserver(String localDeviceId,String absolutePath){
-		return registerObserver(localDeviceId,absolutePath,"");
+		String fatherPath = null;
+		return registerObserver(localDeviceId,absolutePath,fatherPath);
 	}
 	
 	private MyFileObserver registerObserver(String localDeviceId,String absolutePath,String fatherPath){
@@ -208,8 +205,12 @@ public class FileManager implements IFileManager {
 		
 		Assert.assertNull("observer exists when first initialize the observer tree,check it",observer);
 		
-		if(fatherPath != null)
-			observer = new MyFileObserver(absolutePath,localDeviceId,globalMsgHandler,this,mObservers.get(fatherPath));
+		if(fatherPath != null){
+			//System.out.println("-----FileManager-----fatherPath is" + fatherPath);
+			MyFileObserver fatherObserver = mObservers.get(fatherPath);
+			observer = new MyFileObserver(absolutePath,localDeviceId,globalMsgHandler,this,fatherObserver);
+			fatherObserver.addChildObserver(observer);
+			}
 		else
 			observer = new MyFileObserver(absolutePath,localDeviceId,globalMsgHandler,this,null);
 		mObservers.put(absolutePath, observer);
@@ -217,7 +218,7 @@ public class FileManager implements IFileManager {
 			//是文件夹，对子文件递归
 			File []files = FileOperateHelper.subFiles(absolutePath);
 			for(File f:files){
-				observer.addChildObserver(registerObserver(localDeviceId,f.getAbsolutePath(),f.getParent()));
+				registerObserver(localDeviceId,f.getAbsolutePath(),f.getParent());
 			}
 		}
 		return observer;
@@ -265,10 +266,13 @@ public class FileManager implements IFileManager {
 	 * @param newRelativePath
 	 */
 	public boolean renameLocalFile(String fileID,String oldRelativePath,String newRelativePath){
-		 return FileOperateHelper.renameFile(defaultRootPath + "/" + oldRelativePath, defaultRootPath + "/" + newRelativePath);
+		System.out.println("----FileManager----enter renameLocalFile,oldpath is: " +defaultRootPath + oldRelativePath + ";newPath is:" + defaultRootPath + newRelativePath);
+		boolean result =  FileOperateHelper.renameFile(defaultRootPath + oldRelativePath, defaultRootPath + newRelativePath);
+		if(result) System.out.println("----FileManager----rename successful");
+		return result;
 	}
 	
-	public MyFileObserver registerObserver(String target,String absolutePath,Handler handler){
+	public MyFileObserver registerObserver(Handler handler,String target,String absolutePath){
 		return registerObserver(target,absolutePath,handler,null);
 	}
 	
@@ -347,10 +351,12 @@ public class FileManager implements IFileManager {
 	public void modifyObserverPath(String path,String newPath){
 		MyFileObserver observer = mObservers.get(path);
 		if(observer != null){
+			//从mObservers中删除路径为path的observer
 			String parentPath = path.substring(0, path.lastIndexOf("/"));
 			String newParentPath = newPath.substring(0, newPath.lastIndexOf("/"));
 			if(parentPath.equals(newParentPath)){				//父目录相同，为重命名
 				observer.modifyPath(newPath);
+				System.out.println("----FileManager----observer has modifyPath,newPath is : " + newPath);
 			}
 			else{								//父目录不同，树结构发生变化
 				MyFileObserver parent = mObservers.get(parentPath);
@@ -452,7 +458,7 @@ public class FileManager implements IFileManager {
 	}
 	
 	private String getFatherPath(String path){
-		System.out.println("FileManager------Path is:"+path+"------");
+		//System.out.println("FileManager------Path is:"+path+"------");
 		int index  = path.lastIndexOf("/");
 		return path.substring(0, index);
 	}
@@ -548,6 +554,7 @@ public class FileManager implements IFileManager {
 			else{			//不是cache目录下的文件得到了修改
 				MyFileObserver ob = getMyFileObserver(path);
 				if(ob == null){		//文件未存在
+					System.out.println("----FileManager----HandleFileModifiedMsg:file not exists,create file observer");
 					createFile(path);
 				}
 				else{		//文件已经存在

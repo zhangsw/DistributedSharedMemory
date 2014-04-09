@@ -70,6 +70,7 @@ public class FileUtil {
 	public static String getTimeFromLong(long time){
 		Date date=new Date(time);
 		SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-		return df.format(date);
+		String t =  df.format(date);
+		return t.replace(":", "-");
 	}
 }

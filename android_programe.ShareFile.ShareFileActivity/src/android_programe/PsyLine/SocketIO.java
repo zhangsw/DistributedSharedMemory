@@ -75,11 +75,23 @@ public class SocketIO {
 			try {
 				socket.connect(new InetSocketAddress(targetID,FileConstant.TCPPORT), 10000);
 				type = 0;
+				System.out.println("reconnect to " + targetID);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				callBack.connectionFailure(targetID);
 			}
+		}
+	}
+	
+	private void reconnect(){
+		try {
+			socket.connect(new InetSocketAddress(targetID,FileConstant.TCPPORT), 10000);
+			type = 0;
+		}catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			callBack.connectionFailure(targetID);
 		}
 	}
 	
@@ -100,7 +112,7 @@ public class SocketIO {
 	 */
 	public synchronized void sendFileUpdateInform(FileMetaData fileMetaData){
 		try {
-			testConnection();
+			//testConnection();
 			oos.writeUTF(FileTransferHeader.sendFileUpdateHeader());
 			oos.writeUnshared(fileMetaData);
 			oos.flush();
@@ -108,6 +120,7 @@ public class SocketIO {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			reconnect();
 		}
 	}
 	
@@ -121,7 +134,7 @@ public class SocketIO {
 	 */
 	public synchronized void sendFileData(FileMetaData metaData,String absolutePath){
 		try {
-			testConnection();
+			//testConnection();
 			File file = new File(absolutePath);
 			DataInputStream disfile = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 			Assert.assertNotNull("File inputStream for " + metaData.getFileID() + " is null",disfile);
@@ -149,6 +162,7 @@ public class SocketIO {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			reconnect();
 		}
 	}
 	
@@ -160,7 +174,7 @@ public class SocketIO {
 	 */
 	public synchronized void sendFileVersionMap(VersionMap versionMap,String fileID,String relativePath,String tag){
 		try {
-			testConnection();
+			//testConnection();
 			System.out.println("enter socketIO send versionMap,relativePath is " + relativePath);
 			oos.writeUTF(FileTransferHeader.sendFileVersionMapHeader(fileID, relativePath,tag));
 			oos.writeUnshared(versionMap);
@@ -170,6 +184,7 @@ public class SocketIO {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			reconnect();
 		}
 	}
 	
@@ -179,12 +194,13 @@ public class SocketIO {
 	 */
 	public synchronized void sendCommand(String cmd){
 		try {
-			testConnection();
+			//testConnection();
 			oos.writeUTF(cmd);
 			oos.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			reconnect();
 		}
 	}
 	
@@ -193,7 +209,24 @@ public class SocketIO {
 	 */
 	public synchronized void sendDisconnectMsg(){
 		try {
+			System.out.println("-----SocketIO-----send disconnectMsg----target is" + targetID);
 			oos.writeUTF(FileTransferHeader.disconnect());
+			oos.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			reconnect();
+		}
+		
+	}
+	
+	/**
+	 * 发送同步就绪消息
+	 */
+	public synchronized void sendSnyReady() {
+		// TODO Auto-generated method stub
+		try {
+			oos.writeUTF(FileTransferHeader.synReady());
 			oos.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -229,5 +262,7 @@ public class SocketIO {
 		
 		
 	}
+
+	
 	
 }

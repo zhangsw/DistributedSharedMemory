@@ -10,6 +10,7 @@ import android.os.Looper;
 import android.os.Message;
 import android_programe.FileMonitor.SDFileObserver;
 import android_programe.MemoryManager.FileMetaData;
+import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 import android_programe.Util.FileUtil;
 
@@ -201,14 +202,19 @@ public class MyFileObserver{
 	public void modifyPath(String path){
 		iFOManager.updateObserverMap(this.path, path);
 		this.path = path;
-		observer.updatePath(path);
+		if(observer != null){//可能observer还没初始化，这是有可能的，当刚开始创建的是emptynode时，即要监控的文件还不存在时，observer就是空的
+			observer.updatePath(path);
+		}
+		//更新metaData中的relativePath
+		versionManager.getFileMetaData().setRelativePath(path.substring(FileConstant.DEFAULTSHAREPATH.length()));
+		
 		Iterator<MyFileObserver> iter = lChildObserver.iterator();
 		while(iter.hasNext()){
-			System.out.println("has child");
+			//System.out.println("has child");
 			MyFileObserver o = iter.next();
 			String name = FileUtil.getFileNameFromPath(o.getPath());
 			o.modifyPath(path + "/" + name);
-			System.out.println(path + "/" + name);
+			//System.out.println(path + "/" + name);
 		}
 		
 	}
@@ -267,7 +273,8 @@ public class MyFileObserver{
 	public void addChildObserver(MyFileObserver childObserver){
 		for(MyFileObserver fileObserver:lChildObserver)
 			if(fileObserver.getPath().equals(childObserver.getPath())) return;
-		lChildObserver.add(childObserver);					
+		lChildObserver.add(childObserver);
+		//System.out.println("----MyFileObserver----" + path + "add a child observer:" + childObserver.getPath());
 	}
 	
 	public void deleteChildObserver(String path){

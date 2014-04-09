@@ -264,6 +264,28 @@ public class LogLine {
 			psyLine.sendFileUpdateInform(deviceId,fileMetaData);
 	}
 	
+	/**
+	 * 发送同步就绪消息
+	 * @param target
+	 */
+	public void sendSynReady(String target) {
+		// TODO Auto-generated method stub
+		int index = getIndexByName(target);
+		if(index != -1){
+			DevicesInf di = (DevicesInf)devices.get(index);
+			psyLine.sendSynReady(di.getID());
+		}
+	}
+	
+	public void receiveSynReady(String id){
+		int index = getIndexByID(id);
+		if(index != -1){
+			DevicesInf di = (DevicesInf)devices.get(index);
+			memoryManager.receiveSynReady(di.getName());
+
+		}
+	}
+	
 	/**向所有同本设备相连接的设备请求文件*/
 	public boolean fetchFile(final String fileName){
 		return true;
@@ -274,7 +296,7 @@ public class LogLine {
 		DevicesInf temp = new DevicesInf(name,ip,style);
 		if(!devices.contains(temp)){
 			devices.add(temp);
-			memoryManager.addShareDevice(FileConstant.DEFAULTROOTPATH, name, 0);
+			memoryManager.addShareDevice(FileConstant.DEFAULTSHAREPATH, name, 0);
 		}
 	}
 	
@@ -286,6 +308,7 @@ public class LogLine {
 			devices.remove(index);
 			memoryManager.removeShareDevice(di.getName());
 		}
+		
 	}
 	
 	private int getIndexByName(String target){
@@ -300,9 +323,8 @@ public class LogLine {
 	
 	private int getIndexByID(String ID){
 		int i = 0;
-		System.out.println(((DevicesInf)(devices.get(i))).getID()+"$$"+ID+"$$");
 		for(;i<devices.size();i++){
-			System.out.println(((DevicesInf)(devices.get(i))).getID());
+			//System.out.println(((DevicesInf)(devices.get(i))).getID());
 			if(((DevicesInf)(devices.get(i))).getID().equals(ID) ){
 				return i;
 			}		
@@ -318,7 +340,6 @@ public class LogLine {
 		}
 		else return null;
 	}
-	
 
 	
 	
