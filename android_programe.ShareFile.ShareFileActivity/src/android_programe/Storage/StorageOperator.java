@@ -42,7 +42,7 @@ public class StorageOperator {
 			String version = line.substring(splitIndex + VERSIONNUMBER.length(),line.length());
 			int versionNumber = Integer.parseInt(version);
 			map.put(path, versionNumber);
-			System.out.println("-----StorageOperator-----path :" + path + ",versionNumber:" + versionNumber);
+			//System.out.println("-----StorageOperator-----path :" + path + ",versionNumber:" + versionNumber);
 		}
 		return map;
 	}

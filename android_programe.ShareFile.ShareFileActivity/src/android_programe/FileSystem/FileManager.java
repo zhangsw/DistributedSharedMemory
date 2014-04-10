@@ -142,8 +142,10 @@ public class FileManager implements IFileManager {
 		if(FileOperateHelper.fileExist(path)){
 			//先将文件重命名为 (文件名+。oldVersion)的形式
 			FileOperateHelper.renameFile(path, path+oldVersionSuffix);
+			System.out.println("----FileManager----has rename to oldversion");
 			//删除文件
 			FileOperateHelper.deleteFile(path + oldVersionSuffix);
+			System.out.println("----FileManager---has deleted oldversion");
 			deleteObserver(path);
 		}
 	}
