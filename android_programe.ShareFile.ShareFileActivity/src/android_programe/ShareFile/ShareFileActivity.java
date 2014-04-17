@@ -121,7 +121,11 @@ public class ShareFileActivity extends Activity {
 						try {
 							if(serviceBinder == null) System.out.println("serviceBinder is null");
 							if(serviceBinder.connect(ip))
+								{
 								System.out.println("----ShareFileActivity----have connected to "+ip);
+								Toast connectToast = Toast.makeText(ShareFileActivity.this, "Connected to " + ip, Toast.LENGTH_LONG);
+								connectToast.show();
+								}
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -139,8 +143,9 @@ public class ShareFileActivity extends Activity {
 				String ip = disconnectEt.getText().toString();
 				if(SharedMemService != null){
 					if(serviceBinder != null){
-						System.out.println("----ShareFileActivity----will be disconnected with device-----" +ip+"-----");
 						serviceBinder.disconnect(ip);
+						Toast disconnectToast = Toast.makeText(ShareFileActivity.this, "disconnected  " + ip, Toast.LENGTH_LONG);
+						disconnectToast.show();
 					}
 				}
 			}

@@ -4,6 +4,8 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+import junit.framework.Assert;
+
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -169,6 +171,10 @@ public class MemoryManager implements IMemoryManager{
 				if(success){
 					//更新这个文件结点的versionMap，本地version为-1（不存在该文件），远端version则为发送过来的
 					//更新本地保存的远端的版本号
+					Assert.assertNotNull("----MemoryManager----Error,VersionManager is null",remoteVersionMap);
+					System.out.println("----MemoryManager----before updateVersionMap");
+					if(fileManager == null) System.out.println("fileManager is null");
+					if(remoteVersionMap == null) System.out.println("----MemoryManager----remoteVersionMap is null");
 					fileManager.updateVersionMap(path, target, remoteVersionMap.getVersionNumber(target));
 					//修改远端发过来的map中自己的版本号
 					remoteVersionMap.put(localDeviceId, VersionManager.FILENOTEXIST);
@@ -529,6 +535,17 @@ public class MemoryManager implements IMemoryManager{
 	}
 	
 	/**
+	 * 删除所有共享的设备，并且保存共享信息
+	 */
+	public synchronized void removeShareDeviceAll(){
+		for(int i=0;i<shareInfList.size();i++){
+			saveShareInformation(shareInfList.get(i).getTarget());
+			fileManager.withdrowObserver(shareInfList.get(i).getTarget(), shareInfList.get(i).getSharedFilePath());
+		}
+		shareInfList.clear();
+	}
+	
+	/**
 	 * 网络不可用，停止文件变化信息的发送
 	 */
 	public void networkDisabled(){
@@ -541,6 +558,7 @@ public class MemoryManager implements IMemoryManager{
 	 * @param localIP 
 	 */
 	public void reconnectAll(String localIP){
+		removeShareDeviceAll();
 		logLine.reconnectAll(localIP);
 	}
 	
@@ -639,7 +657,7 @@ public class MemoryManager implements IMemoryManager{
 	 * @param targetName
 	 */
 	
-	public void receiveDisconnect(String targetName) {
+	public synchronized void receiveDisconnect(String targetName) {
 		// TODO Auto-generated method stub
 		int index = getIndexByName(targetName);
 		if(index != -1){
@@ -648,10 +666,6 @@ public class MemoryManager implements IMemoryManager{
 			fileManager.withdrowObserver(targetName, s.getSharedFilePath());
 			shareInfList.remove(index);
 		}
-	}
-	
-	private void saveShareInformation(){
-		
 	}
 	
 	/**
@@ -683,6 +697,29 @@ public class MemoryManager implements IMemoryManager{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	private void saveShareInformation(ShareInfo si){
+		Assert.assertNotNull(si);
+		String path = si.getSharedFilePath();
+		File file = new File(FileConstant.DEFAULTVERSIONLOGPATH + "/" + si.getTarget());
+		BufferedWriter bw;
+		try {
+			bw = new BufferedWriter(new FileWriter(file));
+			MyFileObserver mo= fileManager.getMyFileObserver(path);
+			if(mo != null){
+				saveVersionNumber(bw,mo,si.getTarget());
+			}
+			
+			bw.flush();
+			bw.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	

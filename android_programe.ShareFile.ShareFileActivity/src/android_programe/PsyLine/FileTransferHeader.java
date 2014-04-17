@@ -40,6 +40,10 @@ public  class FileTransferHeader {
 	public static String synReady(){
 		return FileConstant.SYNREADY + "\n";
 	}
+	
+	public static String heartBeat(){
+		return FileConstant.HEARTBEAT + "\n";
+	}
 
 	/**
 	 * É¾³ıÎÄ¼şÃüÁî

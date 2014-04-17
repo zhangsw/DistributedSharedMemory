@@ -21,8 +21,9 @@ import android_programe.Util.FileConstant;
 public class PsyTcpServer{
 
 	private ServerSocket serverSocket = null;
-	private ExecutorService executorService = null;
-	private final int POOL_SIZE = 2;				//线程池大小
+	private ExecutorService executorServiceRe = null;
+	private ExecutorService executorServiceSo = null;
+	private final int POOL_SIZE = 8;				//线程池大小
 	private boolean tag;
 	private boolean serverStart;
 	private PsyLine psyline;
@@ -31,8 +32,8 @@ public class PsyTcpServer{
 	
 	public PsyTcpServer(PsyLine p) throws IOException{
 		 int cpuCount = Runtime.getRuntime().availableProcessors();
-		 executorService = Executors.newFixedThreadPool(cpuCount*POOL_SIZE);
-		 
+		 executorServiceRe = Executors.newFixedThreadPool(cpuCount*POOL_SIZE);
+		 executorServiceSo = Executors.newFixedThreadPool(cpuCount*POOL_SIZE);
 		 serverSocket = new ServerSocket(FileConstant.TCPPORT);
 		 tag = true;
 		 serverStart = false;
@@ -61,9 +62,11 @@ public class PsyTcpServer{
 								si.close();	
 							}
 							SocketIO si = new SocketIO(ip,socket,1,psyline);
+							executorServiceSo.execute(si);
 							psyline.addSocket(si);
+							
 							Responser res = new Responser(socket,psyline);
-							executorService.execute(res);//Responser类的定义见后面
+							executorServiceRe.execute(res);//Responser类的定义见后面
 						} catch (Exception e) {
 							e.printStackTrace();
 						}

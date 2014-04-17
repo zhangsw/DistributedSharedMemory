@@ -20,35 +20,37 @@ import android_programe.Util.*;
 public class PsyTcpClient implements FileTransfer{
 
 	private int timeout;
-	private ExecutorService executorService = null;
-	private final int POOL_SIZE = 2;				//线程池大小
+	private ExecutorService executorServiceRe = null;
+	private ExecutorService executorServiceSo = null;
+	private final int POOL_SIZE = 8;				//线程池大小
 	private PsyLine psyline;
+	
 	
 	public PsyTcpClient(PsyLine p){
 		timeout = 10000;
 		int cpuCount = Runtime.getRuntime().availableProcessors();
-		executorService = Executors.newFixedThreadPool(cpuCount*POOL_SIZE);
+		executorServiceRe = Executors.newFixedThreadPool(cpuCount*POOL_SIZE);
+		executorServiceSo = Executors.newFixedThreadPool(cpuCount*POOL_SIZE);
 		psyline = p;
 	}
 	
 	public boolean connect(String ip){
 		if(psyline.getIndexByTargetID(ip) == -1){				//还未同该设备进行连接
-			System.out.println("enter psytcpclient connect");
+			System.out.println("----PsyTcpClient----enter psytcpclient connect");
 			Socket s = new Socket();
 			try {
-				System.out.println("ip is " + ip + " test");
 				s.connect(new InetSocketAddress(ip,FileConstant.TCPPORT), timeout);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return false;
 			}
-			SocketIO socketInf = new SocketIO(ip,s,0,psyline);
-			//socketList.add(socketInf);
-			psyline.addSocket(socketInf);
+			SocketIO socketIO = new SocketIO(ip,s,0,psyline);
+			executorServiceSo.execute(socketIO);
+			psyline.addSocket(socketIO);
 			
 			Responser res = new Responser(s,psyline);
-			executorService.execute(res);
+			executorServiceRe.execute(res);
 			return true;
 		}
 		return false;
@@ -98,7 +100,6 @@ public class PsyTcpClient implements FileTransfer{
 				System.out.println("sendFileInf 1------------------------");	
 				int index = psyline.getIndexByTargetID(ip);
 				SocketIO si = psyline.getSocketInf(index);
-				DataOutputStream dos = si.getDataOutputStream();
 				si.sendCommand(FileConstant.FILEINF + "$PATH$" + relativePath + "$MD5$" + MD5 + "\n");
 					
 				System.out.println("sendFileInf 3-----------------------");

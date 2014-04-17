@@ -3,6 +3,7 @@ package android_programe.PsyLine;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
 
@@ -10,6 +11,7 @@ import android.util.Log;
 import android_programe.FileSystem.VersionMap;
 import android_programe.LogLine.LogLine;
 import android_programe.MemoryManager.FileMetaData;
+import android_programe.Util.FileConstant;
 
 public class PsyLine extends Observable implements FileTransfer,FileTransferCallBack{
 
@@ -18,10 +20,11 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	private PsyTcpClient psyTcpClient;
 	private PsyTcpServer psyTcpServer;
 	private LogLine logline;
-	private List socketList;
+	private List<SocketIO> socketList;
+	
+	
 	//private List psyTcpClients;
 	public PsyLine(LogLine l) throws IOException{
-		TCPConCount = 0;
 		maxTCPConnections = 10;				//设置tcp连接最大个数
 		logline = l;
 		socketList = new ArrayList<SocketIO>();
@@ -36,44 +39,23 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	/** 通过ip进行设备连接(TCP)
 	 * @throws IOException */
 	public boolean connect(String ip) throws IOException{
-		
-		//psyTcpClient = new PsyTcpClient(ip);
-		if(TCPConCount < maxTCPConnections){
-			if (psyTcpClient.connect(ip)){
-				TCPConCount ++;
-				return true;
-			}
-			else return false;
+	//psyTcpClient = new PsyTcpClient(ip);
+		if (psyTcpClient.connect(ip)){
+			TCPConCount ++;
+			return true;
 		}
-		else{
-			System.out.println("已经达到最大连接个数，连接失败");
-			return false;
-		}
+		else return false;
 	}
+	 
 	
 	/**
 	 * 同之前连接的设备重新建立连接
 	 * @param localIP 
 	 */
-	public void reconnectAll(String localIP){
+	public void reconnectAll(){
 		psyTcpServer.serverState();
-		int i=0;
-		for(;i<socketList.size();i++){
-			SocketIO sio = ((SocketIO)socketList.get(i));
-			sio.close();
-			socketList.remove(sio);
-			try {
-				if(connect(sio.getTargetID())){
-					
-				}else{
-					logline.removeDevice(sio.getTargetID());
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
+		removeSocketAll();
+		
 	}
 	
 	/**
@@ -106,8 +88,19 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		int index = getIndexByTargetID(si.getTargetID());
 		if(index != -1){
 			//存在该socket
+			si.close();
 			socketList.remove(index);
 		}
+	}
+	
+	/**
+	 *弃用所有现有的连接 
+	 */
+	public synchronized void removeSocketAll(){
+		for(int i =0;i<socketList.size();i++){
+			socketList.get(i).close();
+		}
+		socketList.clear();
 	}
 	
 	
@@ -115,40 +108,63 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	public boolean sendFile(String ip,final FileMetaData metaData,final String absolutePath){
 		int index = getIndexByTargetID(ip);
 		if(index != -1){
+			((SocketIO)socketList.get(index)).sendFileData(metaData, absolutePath);
+			return true;
+		}
+		return false;
+		/*
+		if(index != -1){
 			int type = ((SocketIO)socketList.get(index)).getType();
 			if(type == 0) return psyTcpClient.sendFile(ip, metaData, absolutePath);
 			else if(type == 1) return psyTcpServer.sendFile(ip, metaData, absolutePath);
 		}
-		return false;
+		return false;*/
 		
 	}
 	
-	public boolean deleteFile(String ip,String relativeFilePath){
+	public boolean deleteFile(String ip,String relativePath){
 		int index = getIndexByTargetID(ip);
 		if(index != -1){
-			int type = ((SocketIO)socketList.get(index)).getType();
-			if(type == 0) return psyTcpClient.deleteFile(ip, relativeFilePath);
-			else if(type == 1) return psyTcpServer.deleteFile(ip, relativeFilePath);
+			((SocketIO)socketList.get(index)).sendCommand(FileTransferHeader.deleteFileCmd(relativePath));
+			return true;
 		}
 		return false;
+		/*
+		if(index != -1){
+			int type = ((SocketIO)socketList.get(index)).getType();
+			if(type == 0) return psyTcpClient.deleteFile(ip, relativePath);
+			else if(type == 1) return psyTcpServer.deleteFile(ip, relativePath);
+		}
+		return false;*/
 	}
 	
 	public boolean renameFile(String ip, String relativeFilePath,String newRelativeFilePath) {
 		int index = getIndexByTargetID(ip);
+		if(index != -1){
+			((SocketIO)socketList.get(index)).sendCommand(FileTransferHeader.renameFileCmd(relativeFilePath, newRelativeFilePath));
+			return true;
+		}
+		return false;
+		/*
 		if(index != -1){
 			int type = ((SocketIO)socketList.get(index)).getType();
 			if(type == 0) return psyTcpClient.renameFile(ip,relativeFilePath,newRelativeFilePath);
 			else if(type == 1) return psyTcpServer.renameFile(ip, relativeFilePath,newRelativeFilePath);
 		}
 		return false;
+		*/
 	}
 	
 	public boolean sendFileInf(String ip,String relativePath,String MD5){
 		int index = getIndexByTargetID(ip);
 		if(index != -1){
+			((SocketIO)socketList.get(index)).sendCommand(FileConstant.FILEINF + "$PATH$" + relativePath + "$MD5$" + MD5 + "\n");
+			return true;
+			/*
 			int type = ((SocketIO)socketList.get(index)).getType();
 			if(type == 0) return psyTcpClient.sendFileInf(ip,relativePath,MD5);
 			else if(type == 1) return psyTcpServer.sendFileInf(ip, relativePath, MD5);
+			*/
 		}
 		return false;
 	}
@@ -156,9 +172,13 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	public boolean makeDir(String ip,String relativePath){
 		int index = getIndexByTargetID(ip);
 		if(index != -1){
+			((SocketIO)socketList.get(index)).sendCommand(FileTransferHeader.makeDirCmd(relativePath));
+			return true;
+			/*
 			int type = ((SocketIO)socketList.get(index)).getType();
 			if(type == 0) return psyTcpClient.makeDir(ip, relativePath);
 			else if(type == 1) return psyTcpServer.makeDir(ip, relativePath);
+			*/
 		}
 		return false;
 	}
@@ -169,9 +189,12 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		case 0:{							//为TCP/IP连接
 			int index = getIndexByTargetID(ID);
 			if(index != -1){
+				((SocketIO)socketList.get(index)).sendCommand(FileTransferHeader.fetchFileCmd(relativePath));
+				return true;
+				/*
 				int type = ((SocketIO)socketList.get(index)).getType();
 				if(type == 0) return psyTcpClient.fetchFile(ID, relativePath);
-				else if(type == 1) return psyTcpServer.fetchFile(ID, relativePath);
+				else if(type == 1) return psyTcpServer.fetchFile(ID, relativePath);*/
 			}
 		}break;
 		//TODO
@@ -330,10 +353,13 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		System.out.println("enter psyline send versionMap");
 		int index = getIndexByTargetID(id);
 		if(index != -1){
+			((SocketIO)socketList.get(index)).sendFileVersionMap(versionMap, fileID, relativePath, tag);
+			/*
 			SocketIO sio = (SocketIO)socketList.get(index);
 			int type = sio.getType();
 			if(type == 0)  psyTcpClient.sendFileVersionMap(sio,versionMap,fileID,relativePath,tag);
 			else if(type == 1) psyTcpServer.sendFileVersionMap(sio,versionMap,fileID,relativePath,tag);
+			*/
 
 		}
 		
@@ -347,9 +373,12 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 			int index = getIndexByTargetID(deviceId.get(i));
 			if(index != -1){
 				SocketIO sio = (SocketIO)socketList.get(index);
+				sio.sendFileUpdateInform(fileMetaData);
+				/*
 				int type = sio.getType();
 				if(type == 0)  psyTcpClient.sendFileUpdateInform(sio,fileMetaData);
 				else if(type == 1) psyTcpServer.sendFileUpdateInform(sio,fileMetaData);
+				*/
 			}
 		}
 	}
@@ -365,26 +394,24 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		// TODO Auto-generated method stub
 		int index = getIndexByTargetID(id);
 		if(index != -1){
+			System.out.println("----PsyLine----SendSynReady:target is:" + id);
 			SocketIO sio = (SocketIO)socketList.get(index);
-			sio.sendSnyReady();
+			sio.sendSynReady();
 		}
 	}
 	
 	public void receiveSynReady(String id){
 		logline.receiveSynReady(id);
 	}
-	
 
 
-	
-
-
-	
-
-
-	
-
-	
-
+	public void sendHeartBeat() {
+		// TODO Auto-generated method stub
+		Iterator<SocketIO> i = socketList.iterator();
+		System.out.println("----PsyLine----send heart beat");
+		while(i.hasNext()){
+			((SocketIO)i.next()).sendHeartBeat();
+		}
+	}
 	
 }
