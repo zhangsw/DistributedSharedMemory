@@ -162,3 +162,6 @@ pip-log.txt
 # Mac crap
 .DS_Store
 android_programe.ShareFile.ShareFileActivity/project.properties
+android_programe.ShareFile.ShareFileActivity/gen/android_programe/ShareFile/BuildConfig.java
+android_programe.ShareFile.ShareFileActivity/gen/android_programe/ShareFile/BuildConfig.java
+android_programe.ShareFile.ShareFileActivity/project.properties
