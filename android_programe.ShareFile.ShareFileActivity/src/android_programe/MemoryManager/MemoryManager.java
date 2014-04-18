@@ -560,6 +560,7 @@ public class MemoryManager implements IMemoryManager{
 	public void reconnectAll(String localIP){
 		removeShareDeviceAll();
 		logLine.reconnectAll(localIP);
+		fileManager.setDispenseMsgTag(true);
 	}
 	
 	public boolean connect(String ip) throws IOException{

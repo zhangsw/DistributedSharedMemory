@@ -60,6 +60,7 @@ public class PsyTcpServer{
 								//存在该设备
 								SocketIO si= psyline.getSocketInf(index);
 								si.close();	
+								psyline.removeSocket(si);
 							}
 							SocketIO si = new SocketIO(ip,socket,1,psyline);
 							executorServiceSo.execute(si);
