@@ -23,7 +23,7 @@ public class VersionMap implements Serializable{
 	 * @param versionNumber	版本号
 	 * @return	同之前该设备相对应的版本号，如果之前不存在，则为null
 	 */
-	public Integer put(String deviceId,int versionNumber){
+	public Integer put(String deviceId,Integer versionNumber){
 		return versionMap.put(deviceId, versionNumber);
 	}
 	

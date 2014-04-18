@@ -128,7 +128,7 @@ public class MyFileObserver{
 		return versionManager.getVersionNumber(deviceId);
 	}
 	
-	public void updateVersionNumber(String deviceId,int versionNumber){
+	public void updateVersionNumber(String deviceId,Integer versionNumber){
 		versionManager.updateVersionNumber(deviceId,versionNumber);
 	}
 	

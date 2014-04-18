@@ -2,6 +2,7 @@ package android_programe.PsyLine;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.Assert;
 
@@ -10,7 +11,19 @@ import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 
 
-public class SocketIO {
+public class SocketIO implements Runnable{
+	
+	private static final int FILEDATA = 1;
+	private static final int VERSIONMAP = 2;
+	private static final int METADATA = 3;
+	private static final int COMMAND = 4;
+	private static final int FILEUPDATE = 5;
+    private static final int DISCONNECT = 6;
+	private static final int SYNREADY = 7;
+	private static final int HEARTBEAT = 8;
+	
+	
+	
 	private Socket socket;
 	private DataInputStream dis;
 	private DataOutputStream dos;
@@ -21,6 +34,7 @@ public class SocketIO {
 	private int urgentData;
 	private FileTransferCallBack callBack;
 	
+	private LinkedBlockingQueue<IOMessage> messageQueue;
 	
 	public SocketIO(String targetID,Socket socket,int type,FileTransferCallBack callBack){
 		try {
@@ -33,6 +47,9 @@ public class SocketIO {
 			oos = new ObjectOutputStream(socket.getOutputStream());
 			urgentData = 0xff;
 			this.callBack = callBack;
+			
+			messageQueue = new LinkedBlockingQueue<IOMessage>();
+			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -66,6 +83,7 @@ public class SocketIO {
 		tag = true;
 	}
 	
+	/*
 	private synchronized void testConnection(){
 		try {
 			socket.sendUrgentData(urgentData);
@@ -82,12 +100,14 @@ public class SocketIO {
 				callBack.connectionFailure(targetID);
 			}
 		}
-	}
+	}*/
 	
 	private void reconnect(){
 		try {
+			
 			socket.connect(new InetSocketAddress(targetID,FileConstant.TCPPORT), 10000);
 			type = 0;
+
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -111,16 +131,27 @@ public class SocketIO {
 	 * 发送文件更新的通知（是收到来自别的设备的更新）
 	 */
 	public synchronized void sendFileUpdateInform(FileMetaData fileMetaData){
+		IOMessage msg = new IOMessage();
+		msg.type = FILEUPDATE;
+		msg.obj1 = fileMetaData;
 		try {
-			//testConnection();
+			messageQueue.put(msg);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+	
+	private void sendFileUpdateInform(IOMessage msg){
+		try {
+			Assert.assertNotNull(msg.obj1);
 			oos.writeUTF(FileTransferHeader.sendFileUpdateHeader());
-			oos.writeUnshared(fileMetaData);
+			oos.writeUnshared((FileMetaData)msg.obj1);
 			oos.flush();
 			oos.reset();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			reconnect();
 		}
 	}
 	
@@ -133,16 +164,30 @@ public class SocketIO {
 	 * @param absolutePath 文件的绝对路径
 	 */
 	public synchronized void sendFileData(FileMetaData metaData,String absolutePath){
+		IOMessage msg = new IOMessage();
+		msg.type = FILEDATA;
+		msg.obj1 = metaData;
+		msg.sArg1 = absolutePath;
+		try {
+			messageQueue.put(msg);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+	
+	private void sendFileData(IOMessage msg){
 		try {
 			//testConnection();
-			File file = new File(absolutePath);
+			Assert.assertNotNull(msg.obj1);
+			Assert.assertNotNull(msg.sArg1);
+			File file = new File(msg.sArg1);
 			DataInputStream disfile = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
-			Assert.assertNotNull("File inputStream for " + metaData.getFileID() + " is null",disfile);
-			System.out.println("file's length that will be sended is" + file.length() + ",path is :" + metaData.getRelativePath());
+			Assert.assertNotNull("File inputStream for " + ((FileMetaData)msg.obj1).getFileID() + " is null",disfile);
 			//发送文件前的处理
 			oos.writeUTF(FileTransferHeader.sendFileDataHeader(file.length()));
 			//先发送文件的metaData
-			oos.writeUnshared(metaData);
+			oos.writeUnshared((FileMetaData)msg.obj1);
 			oos.flush();
 			oos.reset();
 			//发送文件的数据
@@ -154,7 +199,6 @@ public class SocketIO {
 				oos.write(buf,0,read);
 				oos.flush();
 				}
-			System.out.println(metaData.getRelativePath() + " has been  finished sending");
 			disfile.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -162,7 +206,6 @@ public class SocketIO {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			reconnect();
 		}
 	}
 	
@@ -173,18 +216,37 @@ public class SocketIO {
 	 * @param relativePath
 	 */
 	public synchronized void sendFileVersionMap(VersionMap versionMap,String fileID,String relativePath,String tag){
+		IOMessage msg = new IOMessage();
+		msg.type = VERSIONMAP;
+		msg.obj1 = versionMap;
+		msg.sArg1 = fileID;
+		msg.sArg2 = relativePath;
+		msg.sArg3 = tag;
+		
+		try {
+			messageQueue.put(msg);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+	}
+	
+	private void sendFileVersionMap(IOMessage msg){
 		try {
 			//testConnection();
-			System.out.println("enter socketIO send versionMap,relativePath is " + relativePath);
-			oos.writeUTF(FileTransferHeader.sendFileVersionMapHeader(fileID, relativePath,tag));
-			oos.writeUnshared(versionMap);
+			Assert.assertNotNull(msg.obj1);
+			Assert.assertNotNull(msg.sArg1);
+			Assert.assertNotNull(msg.sArg2);
+			Assert.assertNotNull(msg.sArg3);
+			oos.writeUTF(FileTransferHeader.sendFileVersionMapHeader(msg.sArg1, msg.sArg2,msg.sArg3));
+			oos.writeUnshared((VersionMap)msg.obj1);
 			oos.flush();
 			oos.reset();
-			System.out.println("socketIO has sended versionMap,relativePath is" + relativePath);
+			System.out.println("socketIO has sended versionMap,relativePath is" + msg.sArg2);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			reconnect();
 		}
 	}
 	
@@ -193,14 +255,26 @@ public class SocketIO {
 	 * @param cmd
 	 */
 	public synchronized void sendCommand(String cmd){
+		IOMessage msg = new IOMessage();
+		msg.type = COMMAND;
+		msg.sArg1 = cmd;
+		try {
+			messageQueue.put(msg);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+	
+	private void sendCommand(IOMessage msg){
+		Assert.assertNotNull(msg.sArg1);
 		try {
 			//testConnection();
-			oos.writeUTF(cmd);
+			oos.writeUTF(msg.sArg1);
 			oos.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			reconnect();
 		}
 	}
 	
@@ -208,31 +282,81 @@ public class SocketIO {
 	 * 发送断连信息
 	 */
 	public synchronized void sendDisconnectMsg(){
+		IOMessage msg = new IOMessage();
+		msg.type = DISCONNECT;
+		msg.sArg1 = FileTransferHeader.disconnect();
 		try {
-			System.out.println("-----SocketIO-----send disconnectMsg----target is" + targetID);
-			oos.writeUTF(FileTransferHeader.disconnect());
+			messageQueue.put(msg);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+	}
+	
+	private void sendDisconnectMsg(IOMessage msg){
+		Assert.assertNotNull(msg.sArg1);
+		try {
+			//testConnection();
+			oos.writeUTF(msg.sArg1);
 			oos.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			reconnect();
 		}
-		
 	}
 	
 	/**
 	 * 发送同步就绪消息
 	 */
-	public synchronized void sendSnyReady() {
+	public synchronized void sendSynReady() {
 		// TODO Auto-generated method stub
+		IOMessage msg = new IOMessage();
+		msg.type = SYNREADY;
+		msg.sArg1 = FileTransferHeader.synReady();
 		try {
-			oos.writeUTF(FileTransferHeader.synReady());
+			System.out.println("----SocketIO----put synready message");
+			messageQueue.put(msg);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void sendSynReady(IOMessage msg){
+		try {
+			oos.writeUTF(msg.sArg1);
 			oos.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public synchronized void sendHeartBeat() {
+		// TODO Auto-generated method stub
+		IOMessage msg = new IOMessage();
+		msg.type = HEARTBEAT;
+		msg.sArg1 = FileTransferHeader.heartBeat();
+		try {
+			messageQueue.put(msg);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+	}
+	
+	private void sendHeartBeat(IOMessage msg){
+		try {
+			oos.writeUTF(msg.sArg1);
+			oos.flush();
+			System.out.println("----SocketIO----send heart beat");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("----SocketIO----send heart beat failure");
+		}
 	}
 	
 	
@@ -249,6 +373,7 @@ public class SocketIO {
 	 */
 	public synchronized void close(){
 		try {
+			tag = false;
 			dis.close();
 			dos.close();
 			oos.close();
@@ -261,6 +386,55 @@ public class SocketIO {
 		}
 		
 		
+	}
+
+	public void run() {
+		// TODO Auto-generated method stub
+		while(tag){
+			try {
+				IOMessage msg = messageQueue.take();
+				switch(msg.type){
+				case FILEDATA:{
+					sendFileData(msg);
+				}break;
+				case FILEUPDATE:{
+					sendFileUpdateInform(msg);
+				}break;
+				case VERSIONMAP:{
+					sendFileVersionMap(msg);
+				}break;
+				case COMMAND:{
+					sendCommand(msg);
+				}break;
+				case DISCONNECT:{
+					sendDisconnectMsg(msg);
+				}break;
+				case SYNREADY:{
+					sendSynReady(msg);
+				}break;
+				case HEARTBEAT:{
+					sendHeartBeat(msg);
+				}break;
+				default:{
+					
+				}
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	class IOMessage{
+		
+		int type;
+		String sArg1,sArg2,sArg3;
+		Object obj1,obj2,obj3;
+		
+		IOMessage(){
+			
+		}
 	}
 
 	

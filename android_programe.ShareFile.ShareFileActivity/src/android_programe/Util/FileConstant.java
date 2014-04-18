@@ -32,6 +32,8 @@ public class FileConstant {
 	/**同步准备就绪*/
 	public static final int SYNREADY = 34;
 	
+	public static final int HEARTBEAT = 35;
+	
 	/**简单粗暴一致性*/
 	public static final int SIMPLECM = 0;
 	

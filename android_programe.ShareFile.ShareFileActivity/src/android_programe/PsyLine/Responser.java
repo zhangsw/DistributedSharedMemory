@@ -8,6 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+
+import junit.framework.Assert;
 
 import android_programe.FileSystem.VersionMap;
 import android_programe.MemoryManager.FileMetaData;
@@ -26,6 +30,8 @@ public class Responser implements Runnable{
 	private PsyLine psyline;
 	private ObjectInputStream ois;
 	private boolean tag;
+	
+	private static final int SOCKETTIMEOUT = 30;
     
     public Responser(Socket socket,PsyLine psyline){
         this.socket=socket;
@@ -49,6 +55,7 @@ public class Responser implements Runnable{
     public void run() {
     	// TODO 
     	try{
+    		socket.setSoTimeout(SOCKETTIMEOUT*1000);
     		while(tag){
     			if(socket.isClosed()){
     				System.out.println("socket is closed");
@@ -150,6 +157,8 @@ public class Responser implements Runnable{
     					case FileConstant.FILEVERSIONMAP:{
     						try {
 								VersionMap versionMap = (VersionMap)ois.readUnshared();
+								Assert.assertNotNull("----Responser----Error,versionMap is null",versionMap);
+								if(versionMap == null) System.out.println("----Responser----versionMap is null");
 								String fileID = line.substring(line.indexOf("$ID$")+4,line.indexOf("$TAG$"));
 								String tag = line.substring(line.indexOf("$TAG$")+5, line.indexOf("$PATH$"));
 	    						String relativePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
@@ -174,6 +183,10 @@ public class Responser implements Runnable{
     						System.out.println("----Responser----receive Synready message----");
     						psyline.receiveSynReady(ip);
     					}break;
+    					
+    					case FileConstant.HEARTBEAT:{
+    						System.out.println("----Responser----receive heart beat----");
+    					}break;
     					default:{
     	
     						System.out.println("meaningless command:,command's number is " + type);
@@ -182,9 +195,21 @@ public class Responser implements Runnable{
     				}
     			}
     		}
-    	}catch (IOException e){
-    		e.printStackTrace();
-    	} catch (ClassNotFoundException e1) {
+    	}catch (ClassNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (SocketException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			//
+		}catch (SocketTimeoutException e1){
+			//
+			e1.printStackTrace();
+			//读超时，认为同对方丢失连接
+			System.out.println("----Responser----connection failure");
+			psyline.connectionFailure(ip);
+			
+		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}

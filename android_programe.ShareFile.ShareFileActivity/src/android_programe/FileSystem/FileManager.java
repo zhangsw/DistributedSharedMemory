@@ -101,7 +101,7 @@ public class FileManager implements IFileManager {
 		else return false;
 	}
 	
-	public boolean updateVersionMap(String path,String deviceId,int versionNumber){
+	public boolean updateVersionMap(String path,String deviceId,Integer versionNumber){
 		if(mObservers.containsKey(path)){	//存在文件结点
 			System.out.println("----FileManager----updateVersionMap:observer exists");
 			mObservers.get(path).updateVersionNumber(deviceId, versionNumber);
@@ -466,12 +466,17 @@ public class FileManager implements IFileManager {
 	}
 	
 	private boolean dispenseMessage(int result, MyFileObserver o,String s){
-		if(dispenseMsgTag == false) return false;
+		if(dispenseMsgTag == false){
+			System.out.println("----FileManager----dispenseMessage----dispenseMsgTag is false");
+			return false;
+		}
 		if(o != null){
+			System.out.println("----FileManager----dispenseMessage----observer is not null");
 			HashMap<String,Handler> targets = o.getTargetsAll();
 			Iterator<Entry<String, Handler>> iter = targets.entrySet().iterator();
 			while(iter.hasNext()){
 				 Map.Entry<String,Handler> entry =(Map.Entry<String,Handler>)iter.next();
+				 System.out.println("----FileManager----dispenseMessage----target is " + entry.getKey());
 				 Handler handler = (Handler)entry.getValue();
 				 handler.sendMessage(Message.obtain(handler, result, s));
 			 }
