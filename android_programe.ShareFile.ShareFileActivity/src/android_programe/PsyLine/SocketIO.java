@@ -22,8 +22,6 @@ public class SocketIO implements Runnable{
 	private static final int SYNREADY = 7;
 	private static final int HEARTBEAT = 8;
 	
-	
-	
 	private Socket socket;
 	private DataInputStream dis;
 	private DataOutputStream dos;
@@ -31,7 +29,6 @@ public class SocketIO implements Runnable{
 	private int type;							//0为client连接，1为server连接
 	private boolean tag;
 	private ObjectOutputStream oos;
-	private int urgentData;
 	private FileTransferCallBack callBack;
 	
 	private LinkedBlockingQueue<IOMessage> messageQueue;
@@ -45,7 +42,6 @@ public class SocketIO implements Runnable{
 			this.targetID = targetID;
 			tag = true;
 			oos = new ObjectOutputStream(socket.getOutputStream());
-			urgentData = 0xff;
 			this.callBack = callBack;
 			
 			messageQueue = new LinkedBlockingQueue<IOMessage>();
@@ -63,13 +59,6 @@ public class SocketIO implements Runnable{
 		return socket;
 	}
 	
-	public DataInputStream getDataInputStream(){
-		return dis;
-	}
-	
-	public DataOutputStream getDataOutputStream(){
-		return dos;
-	}
 	
 	public synchronized boolean getTag(){
 		if(tag == true){
@@ -83,24 +72,6 @@ public class SocketIO implements Runnable{
 		tag = true;
 	}
 	
-	/*
-	private synchronized void testConnection(){
-		try {
-			socket.sendUrgentData(urgentData);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			try {
-				socket.connect(new InetSocketAddress(targetID,FileConstant.TCPPORT), 10000);
-				type = 0;
-				System.out.println("reconnect to " + targetID);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				callBack.connectionFailure(targetID);
-			}
-		}
-	}*/
 	
 	private void reconnect(){
 		try {
@@ -232,7 +203,7 @@ public class SocketIO implements Runnable{
 		
 	}
 	
-	private void sendFileVersionMap(IOMessage msg){
+	private synchronized void sendFileVersionMap(IOMessage msg){
 		try {
 			//testConnection();
 			Assert.assertNotNull(msg.obj1);
@@ -240,7 +211,7 @@ public class SocketIO implements Runnable{
 			Assert.assertNotNull(msg.sArg2);
 			Assert.assertNotNull(msg.sArg3);
 			oos.writeUTF(FileTransferHeader.sendFileVersionMapHeader(msg.sArg1, msg.sArg2,msg.sArg3));
-			oos.writeUnshared((VersionMap)msg.obj1);
+			oos.writeUnshared((VersionMap)(msg.obj1));
 			oos.flush();
 			oos.reset();
 			System.out.println("socketIO has sended versionMap,relativePath is" + msg.sArg2);
@@ -266,7 +237,7 @@ public class SocketIO implements Runnable{
 		}
 	}
 	
-	private void sendCommand(IOMessage msg){
+	private synchronized void sendCommand(IOMessage msg){
 		Assert.assertNotNull(msg.sArg1);
 		try {
 			//testConnection();
@@ -294,7 +265,7 @@ public class SocketIO implements Runnable{
 		
 	}
 	
-	private void sendDisconnectMsg(IOMessage msg){
+	private synchronized void sendDisconnectMsg(IOMessage msg){
 		Assert.assertNotNull(msg.sArg1);
 		try {
 			//testConnection();
@@ -323,7 +294,7 @@ public class SocketIO implements Runnable{
 		}
 	}
 	
-	private void sendSynReady(IOMessage msg){
+	private synchronized void sendSynReady(IOMessage msg){
 		try {
 			oos.writeUTF(msg.sArg1);
 			oos.flush();
@@ -351,7 +322,7 @@ public class SocketIO implements Runnable{
 		try {
 			oos.writeUTF(msg.sArg1);
 			oos.flush();
-			System.out.println("----SocketIO----send heart beat");
+			//System.out.println("----SocketIO----send heart beat");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -367,6 +338,7 @@ public class SocketIO implements Runnable{
 	public int getType(){
 		return type;
 	}
+	
 	
 	/**
 	 * 关闭socket

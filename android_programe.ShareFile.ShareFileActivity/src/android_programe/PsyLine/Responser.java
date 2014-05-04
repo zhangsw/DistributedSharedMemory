@@ -185,7 +185,7 @@ public class Responser implements Runnable{
     					}break;
     					
     					case FileConstant.HEARTBEAT:{
-    						System.out.println("----Responser----receive heart beat----");
+    						//System.out.println("----Responser----receive heart beat----");
     					}break;
     					default:{
     	

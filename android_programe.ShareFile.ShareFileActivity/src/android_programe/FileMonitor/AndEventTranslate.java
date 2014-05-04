@@ -9,6 +9,7 @@ public class AndEventTranslate implements IEventTranslate{
 	private String mNewPath;
 	private int mType;
 	private boolean tag;
+	private boolean isDuplication;//move_to + delete_self
 	
 	
 	public AndEventTranslate(){
@@ -16,12 +17,14 @@ public class AndEventTranslate implements IEventTranslate{
 		mNewPath = null;
 		mType = 0;
 		tag = false;
+		isDuplication = false;
 	}
 	
 	public int translate(String path, int type) {
 		// TODO Auto-generated method stub
 		int m = 0;
 		if(tag) init();
+		if(isDuplication && type != FileObserver.DELETE_SELF) isDuplication = false;
 		switch(type){
 		case FileObserver.CLOSE_WRITE:{
 			m = IEventTranslate.FILEMODIFIED;
@@ -33,8 +36,10 @@ public class AndEventTranslate implements IEventTranslate{
 		}break;
 		
 		case FileObserver.MOVED_TO:{
-			if(mOldPath == null)
+			if(mOldPath == null){
 				m = IEventTranslate.FILEMOVETO;
+				isDuplication = true;
+			}
 			else mNewPath = path;
 		}break;
 		
@@ -55,12 +60,17 @@ public class AndEventTranslate implements IEventTranslate{
 		}break;
 		
 		case FileObserver.DELETE:{
+			//判断是否有tmp文件，如果有，不发送消息
 			m = IEventTranslate.FILEDELETE;
 		}break;
 		
 		case FileObserver.DELETE_SELF:{
 			if(mType == IEventTranslate.ISDIR && mOldPath != null)
 				m = IEventTranslate.DIRDELETE;
+			else if(isDuplication){
+				m = IEventTranslate.COVERFILE;
+				isDuplication = false;
+			}
 			tag = true;
 		}break;
 		

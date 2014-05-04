@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import android.app.Activity;
@@ -52,7 +53,7 @@ public class TestActivity extends Activity{
 			
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-					//fom = new FileObserverManager();
+					fom = new FileManager(FileConstant.DEFAULTSHAREPATH,"abc");
 					//fom.registerObserver("01", path+"/wallpaper/13/e", null, null);
 					//File file = new File(path+"/wallpaper/13/e");
 					//System.out.println(file.getAbsolutePath());
@@ -96,7 +97,7 @@ public class TestActivity extends Activity{
 				//fom.withdrowObserver("01",path+"/wallpaper/13/e");
 				//fom.withdrowObserver("03",path+"/wallpaper/13");
 				//fom.withdrowObserver("02",path+"/wallpaper/tyy");
-				
+				/*
 				try {
 					DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(FileConstant.DEFAULTSHAREPATH+"/cc")));
 					String line = dis.readUTF();
@@ -112,7 +113,21 @@ public class TestActivity extends Activity{
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+				}*/
+				System.out.println("- 3 -");
+				FileWriter fw;
+				try {
+					fw = new FileWriter(FileConstant.DEFAULTAPPPATH + "/文件d.txt");
+					fw.write("abc");
+					fw.flush();
+					fw.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
+				File file = new File(FileConstant.DEFAULTSHAREPATH + "/文件d.txt");
+				File file1 = new File(FileConstant.DEFAULTSHAREPATH + "/文件d.txt");
+				file.renameTo(file1);
 			}
 		});
 		

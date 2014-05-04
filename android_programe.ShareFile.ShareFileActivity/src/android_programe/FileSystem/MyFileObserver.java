@@ -181,10 +181,17 @@ public class MyFileObserver{
 	}
 	
 	public void startWatching(){
-		if(FileOperateHelper.fileExist(path) && observer == null){
-			observer = new SDFileObserver(path,globalMessageHandler);
-			observer.startWatching();
-		} 
+		if(FileOperateHelper.fileExist(path)){
+			if(observer == null){
+				observer = new SDFileObserver(path,globalMessageHandler);
+				observer.startWatching();
+			}
+			else{
+				System.out.println("----MyFileObserver----start watching----");
+				observer.stopWatching();
+				observer.startWatching();
+			}
+		}
 	}
 
 	

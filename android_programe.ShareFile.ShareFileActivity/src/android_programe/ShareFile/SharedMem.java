@@ -63,6 +63,7 @@ public class SharedMem extends Service{
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		unregisterReceiver(mConChangeReceiver);
+		memManager.stop();
 	}
 	
 	/**

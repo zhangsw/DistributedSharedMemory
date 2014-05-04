@@ -24,6 +24,8 @@ public interface IEventTranslate {
 	
 	public static final int DIRDELETE = 10;
 	
+	public static final int COVERFILE = 11;
+	
 	public static final int ISFILE = 100;
 	
 	public static final int ISDIR = 200;

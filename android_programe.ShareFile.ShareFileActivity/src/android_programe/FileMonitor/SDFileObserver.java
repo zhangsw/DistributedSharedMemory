@@ -2,6 +2,7 @@ package android_programe.FileMonitor;
 
 
 import java.io.File;
+import java.util.Calendar;
 import java.util.Date;
 
 import android.os.FileObserver;
@@ -46,11 +47,11 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.CLOSE_NOWRITE:{
-			//System.out.println(path+"has been close_nowrite");
+			System.out.println(path+"has been close_nowrite");
 		}break;
 		
 		case FileObserver.MOVE_SELF:{
-		//	System.out.println(this.path + ":" + path + "has been move_self");
+			System.out.println(this.path + ":" + path + "has been move_self");
 			
 			Message msg = new Message();
 			msg.obj = this.path;
@@ -60,7 +61,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.DELETE_SELF:{
-		//	System.out.println(this.path + ":" +path+"has been delete_self");
+			System.out.println(this.path + ":" +path+"has been delete_self");
 			
 			Message msg = new Message();
 			msg.obj = this.path;
@@ -71,11 +72,11 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.OPEN:{
-			//System.out.println(path+"has been open");
+			System.out.println(path+"has been open");
 		}break;
 		
 		case FileObserver.DELETE:{					//文件被删除
-		//	System.out.println(this.path + ":" +path+"has been deleted");
+			System.out.println(this.path + ":" +path+"has been deleted");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -85,7 +86,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.CREATE:{					//有新文件被创建
-		//	System.out.println(this.path + ":" +path+"has been created");
+			System.out.println(this.path + ":" +path+"has been created");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
@@ -95,7 +96,7 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MODIFY:{				//文件被修改
-			//System.out.println(path+"has been modified");
+			System.out.println(path+"has been modified");
 			/*
 			Message msg = new Message();
 			msg.obj = path;
@@ -105,30 +106,30 @@ public class SDFileObserver extends FileObserver{
 		}break;
 		
 		case FileObserver.MOVED_FROM:{
-		//	System.out.println(this.path + ":" +path+" has been moved from");
+			System.out.println(this.path + ":" +path+" has been moved from");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
 			msg.what = FileObserver.MOVED_FROM;
-			if(handler == null) System.out.println("handler is null");
+			
 			handler.sendMessage(msg);
 			
 			
 		}break;
 		
 		case FileObserver.MOVED_TO:{
-		//	System.out.println(this.path + ":" +path+" has been moved to");
+			System.out.println(this.path + ":" +path+" has been moved to");
 			
 			Message msg = new Message();
 			msg.obj = this.path + "/" + path;
 			msg.what = FileObserver.MOVED_TO;
-			handler.sendMessage(msg);
 			
+			handler.sendMessage(msg);
 			
 		}break;
 		
 		case FileObserver.CLOSE_WRITE:{
-			//System.out.println(this.path + ":" +path+"has been written and closed");
+			System.out.println(this.path + ":" +path+"has been written and closed");
 			if(path != null){
 				Message msg = new Message();
 				msg.obj = this.path + "/" + path;

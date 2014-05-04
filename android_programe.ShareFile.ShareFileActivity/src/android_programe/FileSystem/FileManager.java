@@ -204,8 +204,11 @@ public class FileManager implements IFileManager {
 	
 	private MyFileObserver registerObserver(String localDeviceId,String absolutePath,String fatherPath){
 		MyFileObserver observer = mObservers.get(absolutePath);
-		
-		Assert.assertNull("observer exists when first initialize the observer tree,check it",observer);
+		if(observer != null){	//observer不为null，即已经存在监控的observer
+			//TODO
+			return observer;
+		}
+		//Assert.assertNull("observer exists when first initialize the observer tree,check it",observer);
 		
 		if(fatherPath != null){
 			//System.out.println("-----FileManager-----fatherPath is" + fatherPath);
@@ -373,7 +376,7 @@ public class FileManager implements IFileManager {
 				}
 				observer.modifyPath(newPath);
 			}
-			observer.startWatching();
+			//observer.startWatching();
 		}
 	}
 	
@@ -431,8 +434,15 @@ public class FileManager implements IFileManager {
 	}
 	
 	//创建新的文件，其路径为path
-	private void createFile(String path){
-		registerObserver(localDeviceId,path,getFatherPath(path));
+	private boolean createFile(String path){
+		MyFileObserver observer = mObservers.get(path);
+		if(observer != null){
+			//已经存在该文件，创建失败
+			return false;
+		}else{
+			registerObserver(localDeviceId,path,getFatherPath(path));
+			return true;
+		}
 	}
 	
 	private void createDir(String path) {
@@ -591,8 +601,10 @@ public class FileManager implements IFileManager {
 				createFile(path);
 			}
 			else{			//有文件移入，且不是cache文件夹
-				createFile(path);
-				dispenseMessage(result,getMyFileObserver(path),path);
+				
+				if(createFile(path)){
+					dispenseMessage(result,getMyFileObserver(path),path);
+				}
 			}
 		}
 		
@@ -702,6 +714,31 @@ public class FileManager implements IFileManager {
 			}
 		}
 		
+		/**
+		 * 
+		 */
+		private void handleCoverFileMsg(String path,int result){
+			MyFileObserver ob = getMyFileObserver(path);
+			if(ob != null){
+				ob.startWatching();
+				long time = FileOperateHelper.getFileModifiedTime(path);
+				if(time != ob.getModifiedTime()){ 	//修改时间变化，说明确实修改了文件
+					System.out.println("file modified,modify time also changed");
+					updateVersion(ob,localDeviceId);
+					//更新metaData中的version号
+					ob.getFileMetaData().setVersionID(ob.getVersionNumber(localDeviceId));
+					//更新文件的修改时间
+					ob.getFileMetaData().setModifiedTime(FileOperateHelper.getFileModifiedTime(path));
+					//更新文件的大小
+					ob.getFileMetaData().setFileSize(FileOperateHelper.getFileLength(path));
+					}
+				else{	//修改时间没变化，说明只是打开了，但内容未修改
+					return;
+					}
+				dispenseMessage(result,getMyFileObserver(path),path);
+			}
+		}
+		
 		private boolean subFileOfCache(String path){
 			if(path.startsWith(FileConstant.DEFAULTSAVEPATH+"/")) return true;
 			else return false;
@@ -717,7 +754,7 @@ public class FileManager implements IFileManager {
 				int result = eventTranslate.translate(path, m.what);
 				switch(result){
 				case IEventTranslate.FILEMODIFIED:{				//文件被修改，将消息发送到共享该文件的对象.
-					System.out.println(path + " has been modified");
+					//System.out.println(path + " has been modified");
 					handleFileModifiedMsg(path,result);
 				}break;
 				
@@ -755,6 +792,10 @@ public class FileManager implements IFileManager {
 				
 				case IEventTranslate.DIRMOVETO:{			//文件夹移入监控目录
 					handleDirMoveToMsg(path,result);
+				}break;
+				
+				case IEventTranslate.COVERFILE:{			//移入文件时，有相同的名字的文件
+					handleCoverFileMsg(path,result);
 				}break;
 				}
 			}

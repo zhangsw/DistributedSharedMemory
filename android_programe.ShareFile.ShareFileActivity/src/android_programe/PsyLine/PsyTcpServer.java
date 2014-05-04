@@ -122,7 +122,6 @@ public class PsyTcpServer{
 				System.out.println("sendFileInf 1------------------------");	
 				int index = psyline.getIndexByTargetID(ip);
 				SocketIO si = psyline.getSocketInf(index);
-				DataOutputStream dos = si.getDataOutputStream();
 				si.sendCommand(FileConstant.FILEINF + "$PATH$" + relativePath + "$MD5$" + MD5 + "\n");
 					
 				System.out.println("sendFileInf 3-----------------------");

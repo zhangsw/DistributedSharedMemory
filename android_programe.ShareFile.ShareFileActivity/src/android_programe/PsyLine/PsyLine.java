@@ -408,7 +408,7 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	public void sendHeartBeat() {
 		// TODO Auto-generated method stub
 		Iterator<SocketIO> i = socketList.iterator();
-		System.out.println("----PsyLine----send heart beat");
+		//System.out.println("----PsyLine----send heart beat");
 		while(i.hasNext()){
 			((SocketIO)i.next()).sendHeartBeat();
 		}

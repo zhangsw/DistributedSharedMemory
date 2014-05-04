@@ -169,6 +169,7 @@ public class ShareInfo{
 			String obj = msg.obj.toString();
 			switch(msg.what){
 			case IEventTranslate.FILEMODIFIED:				//文件被修改
+			case IEventTranslate.COVERFILE:				//文件被覆盖
 			case IEventTranslate.FILEMOVETO:{					//文件移入
 				if(conRule.sendFile(obj)){
 					String relativePath = obj.substring(FileConstant.DEFAULTSHAREPATH.length());

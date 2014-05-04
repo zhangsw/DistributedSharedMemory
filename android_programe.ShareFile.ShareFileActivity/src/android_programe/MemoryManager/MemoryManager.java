@@ -524,6 +524,15 @@ public class MemoryManager implements IMemoryManager{
 		}
 	}
 	
+	/**
+	 * 停止share memory，保存数据
+	 */
+	public synchronized void stop(){
+		for(int i=0;i<shareInfList.size();i++){
+			saveShareInformation(shareInfList.get(i).getTarget());
+		}
+	}
+	
 	public synchronized void removeShareDevice(String target){
 		int index = getIndexByName(target);
 		if(index != -1){
@@ -533,6 +542,8 @@ public class MemoryManager implements IMemoryManager{
 			shareInfList.remove(index);
 		}
 	}
+	
+	
 	
 	/**
 	 * 删除所有共享的设备，并且保存共享信息
