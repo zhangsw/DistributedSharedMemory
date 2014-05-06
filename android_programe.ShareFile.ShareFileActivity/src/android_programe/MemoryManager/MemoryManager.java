@@ -230,7 +230,7 @@ public class MemoryManager implements IMemoryManager{
 				//先更新metaData以及versinMap
 				System.out.println("receive file that is wanted,file version is " + fileMetaData.getVersionID());
 				ob.setFileMetaData(fileMetaData);
-				ob.updateVersionNumber(localDeviceId, fileMetaData.getVersionID());
+				ob.updateVersionMap(localDeviceId, fileMetaData.getVersionID());
 				if(FileOperateHelper.fileExist(defaultRootPath + relativePath)){
 					//有旧版本文件存在，删除它
 					//TODO
@@ -238,7 +238,7 @@ public class MemoryManager implements IMemoryManager{
 				}
 				//将新文件移到指定目录下
 				FileOperateHelper.renameFile(file.getAbsolutePath(), defaultRootPath + fileMetaData.getRelativePath());
-				System.out.println("file has been moved from cache");
+				//System.out.println("file has been moved from cache");
 				//监听收到的文件
 				ob.startWatching();
 				sendFileUpdateInform(ob.getTargetsList(),fileMetaData);
@@ -296,7 +296,7 @@ public class MemoryManager implements IMemoryManager{
 			System.out.println("remote: "+ fileMetaData.getFileSize() + ", "+ fileMetaData.getFileCreator() + "," + fileMetaData.getFileID() + ","+fileMetaData.getRelativePath() + ", "+ fileMetaData.getVersionID() + ", " +fileMetaData.getModifiedTime());
 			if(localMetaData.equals(fileMetaData)){
 				System.out.println("metaData is the same");
-				fileManager.getMyFileObserver(absolutePath).updateVersionNumber(target, fileMetaData.getVersionID());
+				fileManager.getMyFileObserver(absolutePath).updateVersionMap(target, fileMetaData.getVersionID());
 			}
 			else{
 				//TODO
@@ -503,15 +503,15 @@ public class MemoryManager implements IMemoryManager{
 		File file = new File(FileConstant.DEFAULTVERSIONLOGPATH + "/" + target);
 		if(file.exists()){
 			try {
-				System.out.println("versionlog exists,initialize versionlog");
+				//System.out.println("versionlog exists,initialize versionlog");
 				BufferedReader br = new BufferedReader(new FileReader(file));
 				//DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 				LinkedHashMap<String,Integer> versionMap = StorageOperator.readVersionNumber(br);
-				System.out.println("----MemoryManager----initializeVersionNumber:vertsionMap's size is:" + versionMap.size());
+				//System.out.println("----MemoryManager----initializeVersionNumber:vertsionMap's size is:" + versionMap.size());
 				Iterator<Entry<String, Integer>> iter = versionMap.entrySet().iterator();
 				while(iter.hasNext()){
 					Map.Entry<String,Integer> entry =(Map.Entry<String,Integer>)iter.next();
-					System.out.println("----MemoryManager----initializeVersionNumber: " + entry.getKey() + ":" + entry.getValue());
+					//System.out.println("----MemoryManager----initializeVersionNumber: " + entry.getKey() + ":" + entry.getValue());
 					fileManager.updateVersionMap(entry.getKey(), target, entry.getValue());
 				}
 			} catch (FileNotFoundException e) {
@@ -685,10 +685,11 @@ public class MemoryManager implements IMemoryManager{
 	 * @param target
 	 */
 	private void saveShareInformation(String target){
-		System.out.println("save share information,target is " + target);
+		System.out.println("----MemoryManager----save share information,target is " + target);
 		//将target的信息保存在本地文件中
 		int index = getIndexByName(target);
 		if(index != -1){
+			System.out.println("----MemoryManager----saveShareInformation----target exists,begin saving");
 			ShareInfo s = (ShareInfo)(shareInfList.get(index));
 			String path = s.getSharedFilePath();
 			File file = new File(FileConstant.DEFAULTVERSIONLOGPATH + "/" + target);

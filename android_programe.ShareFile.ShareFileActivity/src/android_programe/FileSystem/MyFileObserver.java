@@ -132,6 +132,10 @@ public class MyFileObserver{
 		versionManager.updateVersionNumber(deviceId,versionNumber);
 	}
 	
+	public void updateVersionMap(String deviceId,Integer versionNumber){
+		versionManager.updateVersionMap(deviceId, versionNumber);
+	}
+	
 	
 	/**
 	 * 设置文件的versionMap
@@ -188,7 +192,7 @@ public class MyFileObserver{
 			}
 			else{
 				System.out.println("----MyFileObserver----start watching----");
-				observer.stopWatching();
+				//observer.stopWatching();
 				observer.startWatching();
 			}
 		}

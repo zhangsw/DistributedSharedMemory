@@ -65,9 +65,10 @@ public class PsyTcpServer{
 							SocketIO si = new SocketIO(ip,socket,1,psyline);
 							executorServiceSo.execute(si);
 							psyline.addSocket(si);
-							
+							/*
 							Responser res = new Responser(socket,psyline);
 							executorServiceRe.execute(res);//Responser类的定义见后面
+							*/
 						} catch (Exception e) {
 							e.printStackTrace();
 						}

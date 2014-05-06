@@ -103,10 +103,17 @@ public class FileManager implements IFileManager {
 	
 	public boolean updateVersionMap(String path,String deviceId,Integer versionNumber){
 		if(mObservers.containsKey(path)){	//存在文件结点
-			System.out.println("----FileManager----updateVersionMap:observer exists");
-			mObservers.get(path).updateVersionNumber(deviceId, versionNumber);
+			//System.out.println("----FileManager----updateVersionMap:observer exists");
+			mObservers.get(path).updateVersionMap(deviceId, versionNumber);
 			return true;
 		}else return false;
+	}
+	
+	
+	private void updateVersion(MyFileObserver ob,String deviceId){
+		ob.fileModified(deviceId);
+		
+		System.out.println(ob.getPath() + " has update its local version,version number is " + ob.getVersionNumber(deviceId));
 	}
 	
 	public boolean updateLocalVersion(String path,int versionNumber){
@@ -541,11 +548,7 @@ public class FileManager implements IFileManager {
 		return false;
 	}
 	
-	private void updateVersion(MyFileObserver ob,String deviceId){
-		ob.fileModified(deviceId);
-		
-		System.out.println(ob.getPath() + " has update its local version,version number is " + ob.getVersionNumber(deviceId));
-	}
+	
 	
 	/**
 	 * 全局消息处理，在接收到来自各个observer的检测信息后，利用事件分析器，得出文件操作。
@@ -571,7 +574,7 @@ public class FileManager implements IFileManager {
 			else{			//不是cache目录下的文件得到了修改
 				MyFileObserver ob = getMyFileObserver(path);
 				if(ob == null){		//文件未存在
-					System.out.println("----FileManager----HandleFileModifiedMsg:file not exists,create file observer");
+					//System.out.println("----FileManager----HandleFileModifiedMsg:file not exists,create file observer");
 					createFile(path);
 				}
 				else{		//文件已经存在
@@ -720,7 +723,8 @@ public class FileManager implements IFileManager {
 		private void handleCoverFileMsg(String path,int result){
 			MyFileObserver ob = getMyFileObserver(path);
 			if(ob != null){
-				ob.startWatching();
+				ob.stopWatching();		//停止当前的监听
+				ob.startWatching();		//重新开始监听
 				long time = FileOperateHelper.getFileModifiedTime(path);
 				if(time != ob.getModifiedTime()){ 	//修改时间变化，说明确实修改了文件
 					System.out.println("file modified,modify time also changed");
@@ -750,54 +754,52 @@ public class FileManager implements IFileManager {
 			super.handleMessage(msg);
 			Message m = Message.obtain(msg);
 			String path = m.obj.toString();
-			if(!path.endsWith(".tmp")){		//对于。tmp文件不感兴趣
-				int result = eventTranslate.translate(path, m.what);
-				switch(result){
-				case IEventTranslate.FILEMODIFIED:{				//文件被修改，将消息发送到共享该文件的对象.
-					//System.out.println(path + " has been modified");
-					handleFileModifiedMsg(path,result);
-				}break;
-				
-				case IEventTranslate.FILEMOVETO:{			//有新文件移动到了受监控的文件夹中，需要发送文件并为该文件添加observer
-					handleFileMoveToMsg(path,result);
-				}break;
-				
-				case IEventTranslate.DIRCREATE:{				//文件夹创建		
-					handleCreateDirMsg(path,result);																				
-				}break;
-				
-				case IEventTranslate.FILEMOVEFROM:{			//文件从监测目录中移走，且目标文件夹不在监测范围内
-					handleFileMoveFromMsg(path,result);
-				}break;
-				
-				case IEventTranslate.FILEDELETE:{							//文件删除				
-					handleDeleteFileMsg(path,result);
-				}break;
-				
-				case IEventTranslate.FILERENAMEORMOVE:{		//文件重命名或者移动
-					handleFileRenameOrMoveMsg(eventTranslate.getOldPath(),eventTranslate.getNewPath(),result);
-				}break;
-				
-				case IEventTranslate.DIRRENAMEORMOVE:{					//文件夹重命名或移动
-					handleDirRenameOrMoveMsg(eventTranslate.getOldPath(),eventTranslate.getNewPath(),result);
-				}break;
-				
-				case IEventTranslate.DIRDELETE:{				//文件夹删除
-					handleDeleteDirMsg(eventTranslate.getOldPath(),result);
-				}break;
-				
-				case IEventTranslate.DIRMOVEFROM:{			//文件夹移动至未监控目录下，同文件夹删除
-					handleDirMoveFromMsg(eventTranslate.getOldPath(),result);
-				}break;
-				
-				case IEventTranslate.DIRMOVETO:{			//文件夹移入监控目录
-					handleDirMoveToMsg(path,result);
-				}break;
-				
-				case IEventTranslate.COVERFILE:{			//移入文件时，有相同的名字的文件
-					handleCoverFileMsg(path,result);
-				}break;
-				}
+			int result = eventTranslate.translate(path, m.what);
+			switch(result){
+			case IEventTranslate.FILEMODIFIED:{				//文件被修改，将消息发送到共享该文件的对象.
+				//System.out.println(path + " has been modified");
+				handleFileModifiedMsg(path,result);
+			}break;
+			
+			case IEventTranslate.FILEMOVETO:{			//有新文件移动到了受监控的文件夹中，需要发送文件并为该文件添加observer
+				handleFileMoveToMsg(path,result);
+			}break;
+			
+			case IEventTranslate.DIRCREATE:{				//文件夹创建		
+				handleCreateDirMsg(path,result);																				
+			}break;
+			
+			case IEventTranslate.FILEMOVEFROM:{			//文件从监测目录中移走，且目标文件夹不在监测范围内
+				handleFileMoveFromMsg(path,result);
+			}break;
+			
+			case IEventTranslate.FILEDELETE:{							//文件删除				
+				handleDeleteFileMsg(path,result);
+			}break;
+			
+			case IEventTranslate.FILERENAMEORMOVE:{		//文件重命名或者移动
+				handleFileRenameOrMoveMsg(eventTranslate.getOldPath(),eventTranslate.getNewPath(),result);
+			}break;
+			
+			case IEventTranslate.DIRRENAMEORMOVE:{					//文件夹重命名或移动
+				handleDirRenameOrMoveMsg(eventTranslate.getOldPath(),eventTranslate.getNewPath(),result);
+			}break;
+			
+			case IEventTranslate.DIRDELETE:{				//文件夹删除
+				handleDeleteDirMsg(eventTranslate.getOldPath(),result);
+			}break;
+			
+			case IEventTranslate.DIRMOVEFROM:{			//文件夹移动至未监控目录下，同文件夹删除
+				handleDirMoveFromMsg(eventTranslate.getOldPath(),result);
+			}break;
+			
+			case IEventTranslate.DIRMOVETO:{			//文件夹移入监控目录
+				handleDirMoveToMsg(path,result);
+			}break;
+			
+			case IEventTranslate.COVERFILE:{			//移入文件时，有相同的名字的文件
+				handleCoverFileMsg(path,result);
+			}break;
 			}
 		}
 	}

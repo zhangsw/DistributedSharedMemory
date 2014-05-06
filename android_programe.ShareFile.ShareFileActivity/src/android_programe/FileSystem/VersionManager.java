@@ -55,12 +55,13 @@ public class VersionManager {
 		}
 	}
 	
+	/*
 	public VersionManager(String deviceName,int versionNumber){
 		versionMap = new VersionMap();
 		versionMap.put(deviceName, versionNumber);
 	}
 	
-	
+	*/
 	
 	//更新map中的一个设备及其版本号
 	public void updateVersionNumber(String deviceName,int number){
@@ -69,11 +70,16 @@ public class VersionManager {
 		fileMetaData.setVersionID(number);
 	}
 	
-	//更新文件版本，包括了map及树的更新
+	//更新文件版本，包括了map及metaData
 	public void updateVersionNumber(String deviceName){
 		//更新map
 		addVersionNumber(deviceName,DEFAULT_ADDITION);
-		//更新树
+		//更新metaData
+		fileMetaData.setVersionID(versionMap.getVersionNumber(deviceName));
+	}
+	
+	public void updateVersionMap(String deviceName,int number){
+		versionMap.put(deviceName, number);
 	}
 	
 	//向map中添加一个新设备，版本号为文件不存在

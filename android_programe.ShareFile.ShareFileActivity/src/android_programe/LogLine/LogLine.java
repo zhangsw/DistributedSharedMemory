@@ -59,7 +59,7 @@ public class LogLine {
 				devices.clear();
 			}
 		}
-		psyLine.reconnectAll();
+		psyLine.abandonAllConnection();
 		
 		Iterator<Entry<String, DevicesInf>> iter = devicesBackUp.entrySet().iterator();
 		while(iter.hasNext()){

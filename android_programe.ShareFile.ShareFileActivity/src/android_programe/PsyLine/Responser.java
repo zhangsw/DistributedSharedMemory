@@ -27,15 +27,15 @@ public class Responser implements Runnable{
     private String savePath;
     private int bufferSize = 8192;
 	private byte[] buf;
-	private PsyLine psyline;
+	private FileTransferCallBack callBack;
 	private ObjectInputStream ois;
 	private boolean tag;
 	
 	private static final int SOCKETTIMEOUT = 30;
     
-    public Responser(Socket socket,PsyLine psyline){
+    public Responser(Socket socket,FileTransferCallBack callBack){
         this.socket=socket;
-        this.psyline = psyline;
+        this.callBack = callBack;
         ip = socket.getInetAddress().getHostAddress();
         tag = true;
         try {
@@ -118,40 +118,40 @@ public class Responser implements Runnable{
     							}
     						}
     						
-    						psyline.receiveFileData(ip,fileMetaData,file);
+    						callBack.receiveFileData(ip,fileMetaData,file);
     					}break;
     					
     					case FileConstant.FILEINF:{									//接收到的是文件信息
     						System.out.println("receive fileinf---------");
     						String relativePath = line.substring(line.indexOf("$PATH$")+6, line.indexOf("$MD5$"));
     						String MD5 = line.substring(line.indexOf("$MD5$")+5, line.length()-1); 
-    						psyline.receiveFileInf(ip,relativePath, FileConstant.DEFAULTSHAREPATH+relativePath, MD5);
+    						callBack.receiveFileInf(ip,relativePath, FileConstant.DEFAULTSHAREPATH+relativePath, MD5);
     					}break;
     					
     					case FileConstant.ASKFILE:{									//接收到的是请求文件信息
     						System.out.println("receive askfile---------");
     						String relativePath = line.substring(line.indexOf("$PATH$")+6, line.length()-1);
-    						psyline.receiveAskFile(ip, relativePath, FileConstant.DEFAULTSHAREPATH+relativePath);
+    						callBack.receiveAskFile(ip, relativePath, FileConstant.DEFAULTSHAREPATH+relativePath);
     					}break;
     					
     					case FileConstant.DELETEFILE:{								//接收到的是删除文件信息
     						System.out.println("receive deletefile-----");
     						String relativeFilePath = line.substring(line.indexOf("$PATH$")+6, line.length()-1);
-    						psyline.receiveDeleteFile(ip, FileConstant.DEFAULTSHAREPATH+relativeFilePath);
+    						callBack.receiveDeleteFile(ip, FileConstant.DEFAULTSHAREPATH+relativeFilePath);
     					}break;
     					
     					case FileConstant.RENAMEFILE:{								//收到的是重命名文件信息
     						System.out.println("receive renamefile-----");
     						String oldRelativeFilePath = line.substring(line.indexOf("$OLDPATH$")+9, line.indexOf("$NEWPATH$"));
     						String newRelativeFilePath = line.substring(line.indexOf("$NEWPATH$")+9, line.length()-1);
-    						psyline.receiveRenameFile(ip,FileConstant.DEFAULTSHAREPATH+oldRelativeFilePath,FileConstant.DEFAULTSHAREPATH+newRelativeFilePath);
+    						callBack.receiveRenameFile(ip,FileConstant.DEFAULTSHAREPATH+oldRelativeFilePath,FileConstant.DEFAULTSHAREPATH+newRelativeFilePath);
     					}break;
     					
     					case FileConstant.MAKEDIR:{
     						System.out.println("receive makedir--------");
     						String relativePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
     						System.out.println("relativePath is "+relativePath);
-    						psyline.receiveMakeDir(ip, FileConstant.DEFAULTSHAREPATH+relativePath);
+    						callBack.receiveMakeDir(ip, FileConstant.DEFAULTSHAREPATH+relativePath);
     					}break;
     					
     					case FileConstant.FILEVERSIONMAP:{
@@ -162,7 +162,7 @@ public class Responser implements Runnable{
 								String fileID = line.substring(line.indexOf("$ID$")+4,line.indexOf("$TAG$"));
 								String tag = line.substring(line.indexOf("$TAG$")+5, line.indexOf("$PATH$"));
 	    						String relativePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
-	    						psyline.receiveVersionMap(ip, versionMap, fileID, relativePath,tag);
+	    						callBack.receiveVersionMap(ip, versionMap, fileID, relativePath,tag);
 							} catch (ClassNotFoundException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -171,17 +171,17 @@ public class Responser implements Runnable{
     					
     					case FileConstant.FILEUPDATE:{
     						FileMetaData fileMetaData = (FileMetaData)ois.readUnshared();
-    						psyline.receiveFileUpdate(ip,fileMetaData);
+    						callBack.receiveFileUpdate(ip,fileMetaData);
     					}break;
     					
     					case FileConstant.DISCONNECT:{
     						System.out.println("receive disconnect--------");
-    						psyline.receiveDisconnect(ip);
+    						callBack.receiveDisconnect(ip);
     					}break;
     					
     					case FileConstant.SYNREADY:{
     						System.out.println("----Responser----receive Synready message----");
-    						psyline.receiveSynReady(ip);
+    						callBack.receiveSynReady(ip);
     					}break;
     					
     					case FileConstant.HEARTBEAT:{
@@ -207,7 +207,7 @@ public class Responser implements Runnable{
 			e1.printStackTrace();
 			//读超时，认为同对方丢失连接
 			System.out.println("----Responser----connection failure");
-			psyline.connectionFailure(ip);
+			callBack.connectionFailure(ip);
 			
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block

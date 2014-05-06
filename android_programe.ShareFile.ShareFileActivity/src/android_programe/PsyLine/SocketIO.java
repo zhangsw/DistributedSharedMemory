@@ -33,6 +33,8 @@ public class SocketIO implements Runnable{
 	
 	private LinkedBlockingQueue<IOMessage> messageQueue;
 	
+	private Responser responser;
+	
 	public SocketIO(String targetID,Socket socket,int type,FileTransferCallBack callBack){
 		try {
 			this.socket = socket;
@@ -45,7 +47,9 @@ public class SocketIO implements Runnable{
 			this.callBack = callBack;
 			
 			messageQueue = new LinkedBlockingQueue<IOMessage>();
-			
+			responser = new Responser(socket,callBack);
+			Thread t = new Thread(responser);
+			t.start();
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -271,6 +275,9 @@ public class SocketIO implements Runnable{
 			//testConnection();
 			oos.writeUTF(msg.sArg1);
 			oos.flush();
+			//ÊÍ·Å×ÊÔ´
+			close();
+			callBack.hasDisconnected(targetID);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -350,6 +357,7 @@ public class SocketIO implements Runnable{
 			dos.close();
 			oos.close();
 			socket.close();
+			responser.stop();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

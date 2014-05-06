@@ -48,9 +48,9 @@ public class PsyTcpClient implements FileTransfer{
 			SocketIO socketIO = new SocketIO(ip,s,0,psyline);
 			executorServiceSo.execute(socketIO);
 			psyline.addSocket(socketIO);
-			
+			/*
 			Responser res = new Responser(s,psyline);
-			executorServiceRe.execute(res);
+			executorServiceRe.execute(res);*/
 			return true;
 		}
 		return false;

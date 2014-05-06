@@ -59,6 +59,13 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	}
 	
 	/**
+	 * 抛弃所有连接
+	 */
+	public void abandonAllConnection(){
+		removeSocketAll();
+	}
+	
+	/**
 	 * 断开连接
 	 * @param id 需要断开连接的设备id
 	 */
@@ -68,8 +75,6 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 			System.out.println("enter psyline's disconnect");
 			SocketIO sio = (SocketIO)socketList.get(index);
 			sio.sendDisconnectMsg();
-			sio.close();
-			socketList.remove(index);
 			return true;
 		}
 		else return false;
@@ -411,6 +416,15 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		//System.out.println("----PsyLine----send heart beat");
 		while(i.hasNext()){
 			((SocketIO)i.next()).sendHeartBeat();
+		}
+	}
+
+
+	public void hasDisconnected(String targetID) {
+		// TODO Auto-generated method stub
+		int index = getIndexByTargetID(targetID);
+		if(index != -1){
+			socketList.remove(index);
 		}
 	}
 	
