@@ -35,6 +35,7 @@ public class ShareFileActivity extends Activity {
 	private TextView IPTv;
 	private EditText disconnectEt;
 	private Button disconnectBt;
+	private Button mTestModifyBt;
 	
 	
 	private SharedMem SharedMemService;
@@ -67,13 +68,15 @@ public class ShareFileActivity extends Activity {
         super.onCreate(savedInstanceState);
        setContentView(R.layout.main);
         tv = (TextView)findViewById(R.id.tv);
-        bt1 = (Button)findViewById(R.id.button1);
-        bt2 = (Button)findViewById(R.id.button2);
+        bt1 = (Button)findViewById(R.id.start);
+        bt2 = (Button)findViewById(R.id.stop);
         connectBt = (Button)findViewById(R.id.button3);
         IPEt = (EditText)findViewById(R.id.editText1);
         IPTv = (TextView)findViewById(R.id.textView1);
         disconnectBt = (Button)findViewById(R.id.button4);
         disconnectEt = (EditText)findViewById(R.id.editText2);
+        
+        mTestModifyBt = (Button)findViewById(R.id.test_modify_file_button);
         
         serviceIntent = new Intent(ShareFileActivity.this,SharedMem.class);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -198,11 +201,4 @@ public class ShareFileActivity extends Activity {
         }
         return isRunning;
     }
-	
-	
-    
-   
-
-    
-   
 }

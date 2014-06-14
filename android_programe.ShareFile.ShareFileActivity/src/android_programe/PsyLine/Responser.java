@@ -13,8 +13,8 @@ import java.net.SocketTimeoutException;
 
 import junit.framework.Assert;
 
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.VersionMap;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileUtil;
 
@@ -154,15 +154,15 @@ public class Responser implements Runnable{
     						callBack.receiveMakeDir(ip, FileConstant.DEFAULTSHAREPATH+relativePath);
     					}break;
     					
-    					case FileConstant.FILEVERSIONMAP:{
+    					case FileConstant.FILEVERSION:{
     						try {
 								VersionMap versionMap = (VersionMap)ois.readUnshared();
+								FileMetaData metaData = (FileMetaData)ois.readUnshared();
 								Assert.assertNotNull("----Responser----Error,versionMap is null",versionMap);
 								if(versionMap == null) System.out.println("----Responser----versionMap is null");
-								String fileID = line.substring(line.indexOf("$ID$")+4,line.indexOf("$TAG$"));
 								String tag = line.substring(line.indexOf("$TAG$")+5, line.indexOf("$PATH$"));
 	    						String relativePath = line.substring(line.indexOf("$PATH$")+6,line.length()-1);
-	    						callBack.receiveVersionMap(ip, versionMap, fileID, relativePath,tag);
+	    						callBack.receiveVersion(ip, versionMap, metaData, relativePath,tag);
 							} catch (ClassNotFoundException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();

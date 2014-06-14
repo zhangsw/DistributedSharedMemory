@@ -6,15 +6,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.Assert;
 
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.VersionMap;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 
 
 public class SocketIO implements Runnable{
 	
 	private static final int FILEDATA = 1;
-	private static final int VERSIONMAP = 2;
+	private static final int VERSION = 2;
 	private static final int METADATA = 3;
 	private static final int COMMAND = 4;
 	private static final int FILEUPDATE = 5;
@@ -184,19 +184,25 @@ public class SocketIO implements Runnable{
 		}
 	}
 	
+	public synchronized void sendFileVersionMap(VersionMap versionMap, String relativePath,
+			String tag) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 	/**
 	 *发送文件的versionMap
 	 * @param versionMap
 	 * @param fileID
 	 * @param relativePath
 	 */
-	public synchronized void sendFileVersionMap(VersionMap versionMap,String fileID,String relativePath,String tag){
+	public synchronized void sendFileVersion(VersionMap versionMap,FileMetaData metaData,String relativePath,String tag){
 		IOMessage msg = new IOMessage();
-		msg.type = VERSIONMAP;
+		msg.type = VERSION;
 		msg.obj1 = versionMap;
-		msg.sArg1 = fileID;
-		msg.sArg2 = relativePath;
-		msg.sArg3 = tag;
+		msg.obj2 = metaData;
+		msg.sArg1 = relativePath;
+		msg.sArg2 = tag;
 		
 		try {
 			messageQueue.put(msg);
@@ -207,18 +213,19 @@ public class SocketIO implements Runnable{
 		
 	}
 	
-	private synchronized void sendFileVersionMap(IOMessage msg){
+	private synchronized void sendFileVersion(IOMessage msg){
 		try {
 			//testConnection();
 			Assert.assertNotNull(msg.obj1);
+			Assert.assertNotNull(msg.obj2);
 			Assert.assertNotNull(msg.sArg1);
 			Assert.assertNotNull(msg.sArg2);
-			Assert.assertNotNull(msg.sArg3);
-			oos.writeUTF(FileTransferHeader.sendFileVersionMapHeader(msg.sArg1, msg.sArg2,msg.sArg3));
+			oos.writeUTF(FileTransferHeader.sendFileVersionHeader(msg.sArg1, msg.sArg2));
 			oos.writeUnshared((VersionMap)(msg.obj1));
+			oos.writeUnshared((FileMetaData)(msg.obj2));
 			oos.flush();
 			oos.reset();
-			System.out.println("socketIO has sended versionMap,relativePath is" + msg.sArg2);
+			System.out.println("socketIO has sended versionMap,relativePath is" + msg.sArg1);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -380,8 +387,8 @@ public class SocketIO implements Runnable{
 				case FILEUPDATE:{
 					sendFileUpdateInform(msg);
 				}break;
-				case VERSIONMAP:{
-					sendFileVersionMap(msg);
+				case VERSION:{
+					sendFileVersion(msg);
 				}break;
 				case COMMAND:{
 					sendCommand(msg);
@@ -416,6 +423,8 @@ public class SocketIO implements Runnable{
 			
 		}
 	}
+
+	
 
 	
 	

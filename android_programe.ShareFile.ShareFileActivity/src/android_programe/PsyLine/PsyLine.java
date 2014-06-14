@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Observable;
 
 import android.util.Log;
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.VersionMap;
 import android_programe.LogLine.LogLine;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 
 public class PsyLine extends Observable implements FileTransfer,FileTransferCallBack{
@@ -248,14 +248,17 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		return logline.receiveMakeDir(targetIp, absolutePath);
 	}
 	
-	public boolean receiveVersionMap(String targetIp,VersionMap versionMap,String fileID,String relativePath,String tag){
-		return logline.receiveVersionMap(targetIp,versionMap,fileID,relativePath,tag);
-	}
 	
 	public void receiveFileData(String targetIp, FileMetaData fileMetaData,
 			File file) {
 		// TODO Auto-generated method stub
 		logline.receiveFileData(targetIp,fileMetaData,file);
+	}
+	
+	public boolean receiveVersion(String targetIp, VersionMap versionMap,
+			FileMetaData metaData, String relativePath, String tag) {
+		// TODO Auto-generated method stub
+		return logline.receiveVersion(targetIp, versionMap, metaData, relativePath, tag);
 	}
 	
 	/**
@@ -350,15 +353,23 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		// TODO Auto-generated method stub
 		
 	}
+	
+	public void sendFileVersionMap(String id,VersionMap versionMap, String relativePath,String tag){
+		System.out.println("enter psyline send versionMap");
+		int index = getIndexByTargetID(id);
+		if(index != -1){
+			((SocketIO)socketList.get(index)).sendFileVersionMap(versionMap, relativePath, tag);
+		}
+	}
 
 
-	public void sendFileVersionMap(String id, String fileID,
+	public void sendFileVersion(String id, FileMetaData metaData,
 			VersionMap versionMap, String relativePath,String tag) {
 		// TODO Auto-generated method stub
 		System.out.println("enter psyline send versionMap");
 		int index = getIndexByTargetID(id);
 		if(index != -1){
-			((SocketIO)socketList.get(index)).sendFileVersionMap(versionMap, fileID, relativePath, tag);
+			((SocketIO)socketList.get(index)).sendFileVersion(versionMap, metaData, relativePath, tag);
 			/*
 			SocketIO sio = (SocketIO)socketList.get(index);
 			int type = sio.getType();
@@ -427,5 +438,8 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 			socketList.remove(index);
 		}
 	}
+
+
+	
 	
 }

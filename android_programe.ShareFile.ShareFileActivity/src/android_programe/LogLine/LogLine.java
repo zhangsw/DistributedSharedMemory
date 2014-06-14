@@ -10,8 +10,8 @@ import junit.framework.Assert;
 
 import android.os.Handler;
 import android.util.Log;
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.VersionMap;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.MemoryManager.MemoryManager;
 import android_programe.PsyLine.*;
 import android_programe.Util.FileConstant;
@@ -189,19 +189,29 @@ public class LogLine {
 	}
 	
 	/**
-	 * 发送文件的versionMap
+	 * 发送文件的version,包括map和meta data
 	 * @param target	目标
 	 * @param fileID	文件的id
 	 * @param versionMap	
 	 * @param relativePath	文件的相对路径
 	 */
-	public void sendFileVersionMap(String target, String fileID,
+	public void sendFileVersion(String target, FileMetaData metaData,
 			VersionMap versionMap, String relativePath,String tag) {
 		// TODO Auto-generated method stub
 		int index = getIndexByName(target);
 		if(index != -1){
 			DevicesInf di = devices.get(index);
-			psyLine.sendFileVersionMap(di.getID(), fileID,versionMap,relativePath,tag);
+			psyLine.sendFileVersion(di.getID(), metaData,versionMap,relativePath,tag);
+		}
+	}
+	
+	public void sendFileVersionMap(String target, String fileID,
+			VersionMap versionMap, String relativePath, String tag) {
+		// TODO Auto-generated method stub
+		int index = getIndexByName(target);
+		if(index != -1){
+			DevicesInf di = devices.get(index);
+			psyLine.sendFileVersionMap(di.getID(), versionMap,relativePath,tag);
 		}
 	}
 	
@@ -227,6 +237,25 @@ public class LogLine {
 		if(index != -1){
 			Assert.assertNotNull("----LogLine----Error,versionMap is null",versionMap);
 			return memoryManager.receiveVersionMap(devices.get(index).getName(),fileID, versionMap, relativePath,tag);
+		}
+		else return false;
+	}
+	
+	/**
+	 * 接收到文件的version
+	 * @param targetIp
+	 * @param versionMap
+	 * @param metaData
+	 * @param relativePath
+	 * @param tag
+	 * @return
+	 */
+	public boolean receiveVersion(String targetIp, VersionMap versionMap,
+			FileMetaData metaData, String relativePath, String tag) {
+		// TODO Auto-generated method stub
+		int index = getIndexByID(targetIp);
+		if(index != -1){
+			return memoryManager.receiveVersion(devices.get(index).getName(),versionMap,metaData, relativePath, tag);
 		}
 		else return false;
 	}
@@ -431,6 +460,18 @@ public class LogLine {
 		}
 		
 	}
+
+
+
+
+
+	
+
+
+
+
+
+	
 	
 
 	

@@ -4,9 +4,9 @@ import java.io.File;
 import java.util.HashMap;
 
 import android_programe.FileSystem.FileManager;
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.MyFileObserver;
 import android_programe.FileSystem.VersionMap;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.MemoryManager.IMemoryManager;
 
 public class ConflictManager implements IResoluteOperator{
@@ -49,8 +49,22 @@ public class ConflictManager implements IResoluteOperator{
 		return conflictDetect.detect(localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId);
 	}
 	
+	public int detect(VersionMap localVersionMap, String localDeviceId,
+			VersionMap remoteVersionMap, String remoteDeviceId,
+			FileMetaData localMetaData, FileMetaData remoteMetaData) {
+		// TODO Auto-generated method stub
+		return conflictDetect.detect(localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId, localMetaData, remoteMetaData);
+	}
+	
 	public void resolute(String fileID,VersionMap localVersionMap,String localDeviceId,VersionMap remoteVersionMap,String remoteDeviceId,String relativePath){
 		conflictResolute.resoluteConfliction(fileID,localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId, relativePath,this);
+	}
+	
+	public void resolute(VersionMap localVersionMap, String localDeviceId,
+			VersionMap remoteVersionMap, String remoteDeviceId, String relativePath,
+			FileMetaData remoteMetaData) {
+		// TODO Auto-generated method stub
+		conflictResolute.resoluteConfliction(localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId, relativePath, remoteMetaData,this);
 	}
 	
 	/**
@@ -110,11 +124,11 @@ public class ConflictManager implements IResoluteOperator{
 		imm.fetchFile(target, relativePath);
 	}
 
-	public void renameLocalFile(String fileID, String oldRelativePath,
+	public void renameLocalFile(String oldRelativePath,
 			String newRelativePath) {
 		// TODO Auto-generated method stub
 		System.out.println("----ConflictManager----enter renameLocalFile");
-		imm.renameLocalFile(fileID, oldRelativePath, newRelativePath);
+		imm.renameLocalFile(oldRelativePath, newRelativePath);
 		
 	}
 
@@ -126,6 +140,10 @@ public class ConflictManager implements IResoluteOperator{
 	public ConflictFileNode getConflictFileNode(String path){
 		return conflictFiles.get(path);
 	}
+
+	
+
+	
 	
 	
 

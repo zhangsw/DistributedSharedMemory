@@ -33,5 +33,5 @@ public interface IResoluteOperator {
 	 * @param oldRelativePath	文件的旧的相对路径
 	 * @param newRelativePath	文件的新的相对路径
 	 */
-	public void renameLocalFile(String fileID,String oldRelativePath,String newRelativePath);
+	public void renameLocalFile(String oldRelativePath,String newRelativePath);
 }

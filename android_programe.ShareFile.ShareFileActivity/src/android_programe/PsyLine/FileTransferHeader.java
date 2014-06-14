@@ -16,13 +16,13 @@ public  class FileTransferHeader {
 	}
 	
 	/**
-	 * 发送文件versionMap前的消息
+	 * 发送文件version前的消息
 	 * @param fileID	文件id
 	 * @param relativePath	文件相对路径
 	 * @return
 	 */
-	public static String sendFileVersionMapHeader(String fileID,String relativePath,String tag){
-		return FileConstant.FILEVERSIONMAP + "$ID$" + fileID + "$TAG$" + tag + "$PATH$" + relativePath + "\n";
+	public static String sendFileVersionHeader(String relativePath,String tag){
+		return FileConstant.FILEVERSION +"$TAG$" + tag + "$PATH$" + relativePath + "\n";
 	}
 	
 	public static String sendFileUpdateHeader(){

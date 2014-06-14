@@ -23,7 +23,7 @@ public class FileConstant {
 	
 	public static final int MAKEDIR = 30;
 	
-	public static final int FILEVERSIONMAP = 31;
+	public static final int FILEVERSION = 31;
 	
 	public static final int FILEUPDATE = 32;
 	

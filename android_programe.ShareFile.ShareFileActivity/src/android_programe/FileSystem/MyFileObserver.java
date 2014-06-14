@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android_programe.FileMonitor.SDFileObserver;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 import android_programe.Util.FileUtil;
@@ -30,6 +29,9 @@ public class MyFileObserver{
 	private Handler globalMessageHandler;
 	
 	private VersionManager versionManager; 		//文件版本控制单元，包含了文件历史，版本号等
+	
+	/**whether file is opened*/
+	private boolean isFileOpened = false;
 	
 	/**
 	 * 
@@ -134,6 +136,10 @@ public class MyFileObserver{
 	
 	public void updateVersionMap(String deviceId,Integer versionNumber){
 		versionManager.updateVersionMap(deviceId, versionNumber);
+	}
+	
+	public void updateVersionMap(VersionMap versionMap){
+		versionManager.updateVersionMap(versionMap);
 	}
 	
 	

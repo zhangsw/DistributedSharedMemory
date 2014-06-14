@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.os.Message;
 import android_programe.Conflict.ConflictManager;
 import android_programe.FileSystem.FileManager;
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.MyFileObserver;
 import android_programe.FileSystem.VersionManager;
 import android_programe.FileSystem.VersionMap;
@@ -100,11 +101,11 @@ public class MemoryManager implements IMemoryManager{
 		
 	}
 	
-	private void sendFileVersionMap(String target,String relativePath,String tag){
+	private void sendFileVersion(String target,String relativePath,String tag){
 		MyFileObserver ob = fileManager.getMyFileObserver(defaultRootPath + relativePath);
 		if(ob != null){
 			System.out.println("before logline sendFileVersionMap");
-			logLine.sendFileVersionMap(target, ob.getFileMetaData().getFileID(), ob.getVersionMap(), relativePath,tag);
+			logLine.sendFileVersion(target, ob.getFileMetaData(), ob.getVersionMap(), relativePath,tag);
 		}
 	}
 	
@@ -131,6 +132,7 @@ public class MemoryManager implements IMemoryManager{
 	 * @param RemoteVersionMap 版本map
 	 * 
 	 */
+	
 	public boolean receiveVersionMap(String target,String fileID,VersionMap remoteVersionMap,String relativePath,String tag){
 		System.out.println("receive versionMap,relativePath is " + relativePath);
 		String path = defaultRootPath + relativePath;
@@ -194,6 +196,70 @@ public class MemoryManager implements IMemoryManager{
 		return true;
 	}
 	
+	public boolean receiveVersion(String target, VersionMap remoteVersionMap,
+			FileMetaData remoteMetaData, String relativePath, String tag) {
+		// TODO Auto-generated method stub
+		String path = defaultRootPath + relativePath;
+		VersionMap localVersionMap = fileManager.getVersionMap(path);
+		FileMetaData localMetaData = fileManager.getFileMetaData(path);
+		
+		if(localVersionMap != null){	//存在该文件的文件结点
+			//对收到的versinMap进行冲突检测，若需要更新本地的版本号，则进行更新
+			int detectResult = conflictManager.detect(localVersionMap, localDeviceId, remoteVersionMap, target, localMetaData, remoteMetaData);
+			//if发生冲突
+			if(detectResult == ConflictManager.CONFLICT){
+				//冲突消解
+				if(tag.equals(VERSIONMAP)){	//对方还不知道自己的versionMap
+					sendFileVersion(target,relativePath,VERSIONMAPACK);
+				}
+				conflictManager.resolute(localVersionMap, localDeviceId, remoteVersionMap,target,relativePath,remoteMetaData);
+			}
+			// 远端有更新
+			else if(detectResult == ConflictManager.LOCALNEEDUPDATE){
+				//向target请求该文件
+				fetchFile(target,relativePath);
+			}
+			else if(detectResult == ConflictManager.REMOTENEEDUPDATE){
+				//如果远端还未获得本地更新，向远端发送通知
+				sendFileVersion(target,relativePath,VERSIONMAP);
+			}
+		}
+		else{	//本地不存在该文件的文件结点
+			//TODO
+			if(tag.equals(VERSIONMAP)){
+				//创建新的文件结点
+				boolean success = fileManager.createEmptyFileNode(path, remoteMetaData.getFileID());
+				if(success){
+					//更新这个文件结点的versionMap，本地version为-1（不存在该文件），远端version则为发送过来的
+					//更新本地保存的远端的版本号
+					Assert.assertNotNull("----MemoryManager----Error,VersionManager is null",remoteVersionMap);
+					System.out.println("----MemoryManager----before updateVersionMap");
+					if(fileManager == null) System.out.println("fileManager is null");
+					if(remoteVersionMap == null) System.out.println("----MemoryManager----remoteVersionMap is null");
+					//更新versionMap
+					fileManager.updateVersionMap(path, remoteVersionMap);
+					/*
+					fileManager.updateVersionMap(path, target, remoteVersionMap.getVersionNumber(target));
+					//修改远端发过来的map中自己的版本号
+					remoteVersionMap.put(localDeviceId, VersionManager.FILENOTEXIST);
+					//将修改的versionMap转发到其他设备
+					List<String>targets = fileManager.getMyFileObserver(path).getTargetsList();
+					//转发versionMap
+					//forwardVersionMap(targets,target,fileID,remoteVersionMap,relativePath);
+					 * 
+					 */
+					//向target请求该文件
+					fetchFile(target,relativePath);
+				}
+			}else{
+				//忽略
+			}
+		}
+		
+		//TODO
+		return true;
+	}
+	
 	/**
 	 * 转发收到的versionMap
 	 * @param targets	需要转发的目标
@@ -230,7 +296,7 @@ public class MemoryManager implements IMemoryManager{
 				//先更新metaData以及versinMap
 				System.out.println("receive file that is wanted,file version is " + fileMetaData.getVersionID());
 				ob.setFileMetaData(fileMetaData);
-				ob.updateVersionMap(localDeviceId, fileMetaData.getVersionID());
+				//ob.updateVersionMap(localDeviceId, fileMetaData.getVersionID());
 				if(FileOperateHelper.fileExist(defaultRootPath + relativePath)){
 					//有旧版本文件存在，删除它
 					//TODO
@@ -241,7 +307,7 @@ public class MemoryManager implements IMemoryManager{
 				//System.out.println("file has been moved from cache");
 				//监听收到的文件
 				ob.startWatching();
-				sendFileUpdateInform(ob.getTargetsList(),fileMetaData);
+				//sendFileUpdateInform(ob.getTargetsList(),fileMetaData);
 			}
 			
 		}
@@ -252,7 +318,7 @@ public class MemoryManager implements IMemoryManager{
 				System.out.println("----MemoryManager----receive conflictFile");
 				conflictManager.receiveConflictFileData(target, fileMetaData, file);
 				//发送本地收到文件通知
-				sendFileUpdateInform(fileManager.getMyFileObserver(defaultRootPath + relativePath).getTargetsList(),fileMetaData);
+				//sendFileUpdateInform(fileManager.getMyFileObserver(defaultRootPath + relativePath).getTargetsList(),fileMetaData);
 				
 			}
 			else{	
@@ -776,7 +842,7 @@ public class MemoryManager implements IMemoryManager{
 			case FileConstant.SENDFILEMESSAGE:{											//发送文件数据,其实是发送versionMap
 				
 				System.out.println("-----sendfilemessage------relativeFilePath is " + mo.getRelativeFilepath() + ",target is " + mo.getTarget());
-				sendFileVersionMap(mo.getTarget(),mo.getRelativeFilepath(),VERSIONMAP);
+				sendFileVersion(mo.getTarget(),mo.getRelativeFilepath(),VERSIONMAP);
 				
 				//sendFile(mo.getTarget(),mo.getFilepath(),mo.getRelativeFilepath());
 				
@@ -827,18 +893,25 @@ public class MemoryManager implements IMemoryManager{
 	}
 
 
-
-	public void renameLocalFile(String fileID, String oldRelativePath,
+	/*
+	public void renameLocalFile(String oldRelativePath,
 			String newRelativePath) {
 		// TODO Auto-generated method stub
 		fileManager.renameLocalFile(fileID, oldRelativePath, newRelativePath);
 		
 	}
-
+*/
 	public void createEmptyFileNode(String path, String fileID) {
 		// TODO Auto-generated method stub
 		fileManager.createEmptyFileNode(path, fileID);
 	}
+
+	public void renameLocalFile(String oldRelativePath, String newRelativePath) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	
 
 	
 

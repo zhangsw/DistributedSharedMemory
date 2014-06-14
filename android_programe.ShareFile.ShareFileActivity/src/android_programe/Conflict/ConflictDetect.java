@@ -1,5 +1,6 @@
 package android_programe.Conflict;
 
+import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.VersionMap;
 
 /**
@@ -76,4 +77,43 @@ public class ConflictDetect {
 		return -1;
 		
 	}
+
+	public int detect(VersionMap localVersionMap, String localDeviceId,
+			VersionMap remoteVersionMap, String remoteDeviceId,
+			FileMetaData localMetaData, FileMetaData remoteMetaData) {
+		// TODO Auto-generated method stub
+		int result = -1;
+		int compareResult = localVersionMap.compareTo(remoteVersionMap);
+		switch(compareResult){
+		case VersionMap.EQUAL:{
+			System.out.println("----ConflictDetect----detect----both know the version");
+			result = ConflictManager.BOTHKNOW;
+		}break;
+		case VersionMap.GREATER:{
+			//远端需要更新
+			result = ConflictManager.REMOTENEEDUPDATE;
+		}break;
+		case VersionMap.LESSER:{
+			//本地需要更新
+			result = ConflictManager.LOCALNEEDUPDATE;
+			localVersionMap.merge(remoteVersionMap);
+		}break;
+		case VersionMap.UNDEFINED:{
+			// 没有相对次序，可能会产生冲突，判断metaData
+			if(localMetaData.getModifiedTime()==remoteMetaData.getModifiedTime()){
+				//file is same
+				result = ConflictManager.BOTHKNOW;
+				localVersionMap.merge(remoteVersionMap);
+			}
+			else{
+				result = ConflictManager.CONFLICT;
+			}
+		}break;
+		default:{
+			System.out.println("----ConflictDetect----detect----default situation");
+		}
+		}
+		return result;
+	}
+	
 }

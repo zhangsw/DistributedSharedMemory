@@ -36,7 +36,6 @@ public class TestActivity extends Activity{
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.test);
-		//fom = new FileObserverManager();
 		try {
 			System.out.println("- 1 -");
 			con = new MemoryManager("AA");
@@ -54,39 +53,6 @@ public class TestActivity extends Activity{
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 					fom = new FileManager(FileConstant.DEFAULTSHAREPATH,"abc");
-					//fom.registerObserver("01", path+"/wallpaper/13/e", null, null);
-					//File file = new File(path+"/wallpaper/13/e");
-					//System.out.println(file.getAbsolutePath());
-					//System.out.println(file.getPath());
-					//System.out.println(file.getName());
-					//System.out.println(file.getParent());
-					//fom.registerObserver("02", path+"/wallpaper/13/e", null, null);
-					//fom.registerObserver("02", path+"/wallpaper/tyy", null, null);
-					//fom.registerObserver("03", path+"/wallpaper/", null, null);
-					//fom.registerObserver("01", path + "/wallpaper/ak1", null,null);
-				
-				//con.addShareDevice(path+"/wallpaper", "03", 0);
-				//con.addShareDevice(path + "/wallpaper/ak1", "01", 0);
-				/*
-				ConflictDetect cd = new ConflictDetect();
-				String local = "local";
-				String remote = "remote";
-				VersionMap localVersionMap = new VersionMap();
-				VersionMap remoteVersionMap = new VersionMap();
-				localVersionMap.put(local, 0);
-				localVersionMap.put(remote, 0);
-				remoteVersionMap.put(remote, 0);
-				remoteVersionMap.put(local, 0);
-				
-				localVersionMap.put(local, 1);
-				cd.detect(localVersionMap, local, remoteVersionMap, remote);
-				
-				remoteVersionMap.put(local, 1);
-				cd.detect(localVersionMap, local, remoteVersionMap, remote);
-				
-				remoteVersionMap.put(remote, 1);
-				cd.detect(localVersionMap, local, remoteVersionMap, remote);
-					*/
 			}
 		});
 		
@@ -94,26 +60,6 @@ public class TestActivity extends Activity{
 			
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				//fom.withdrowObserver("01",path+"/wallpaper/13/e");
-				//fom.withdrowObserver("03",path+"/wallpaper/13");
-				//fom.withdrowObserver("02",path+"/wallpaper/tyy");
-				/*
-				try {
-					DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(FileConstant.DEFAULTSHAREPATH+"/cc")));
-					String line = dis.readUTF();
-					while( line!= null){
-						System.out.println(line);
-						line = dis.readUTF();
-					}
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}catch (EOFException e){
-					System.out.println("file complish reading");
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}*/
 				System.out.println("- 3 -");
 				FileWriter fw;
 				try {
@@ -129,10 +75,7 @@ public class TestActivity extends Activity{
 				File file1 = new File(FileConstant.DEFAULTSHAREPATH + "/ÎÄ¼þd.txt");
 				file.renameTo(file1);
 			}
-		});
-		
-		
-		
+		});	
 	}
 
 }

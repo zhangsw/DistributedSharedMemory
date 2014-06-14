@@ -17,7 +17,6 @@ import android.os.Looper;
 import android.os.Message;
 import android_programe.FileMonitor.AndEventTranslate;
 import android_programe.FileMonitor.IEventTranslate;
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 
@@ -105,6 +104,13 @@ public class FileManager implements IFileManager {
 		if(mObservers.containsKey(path)){	//存在文件结点
 			//System.out.println("----FileManager----updateVersionMap:observer exists");
 			mObservers.get(path).updateVersionMap(deviceId, versionNumber);
+			return true;
+		}else return false;
+	}
+	
+	public boolean updateVersionMap(String path,VersionMap versionMap){
+		if(mObservers.containsKey(path)){
+			mObservers.get(path).updateVersionMap(versionMap);
 			return true;
 		}else return false;
 	}
@@ -277,7 +283,7 @@ public class FileManager implements IFileManager {
 	 * @param oldRelativePath
 	 * @param newRelativePath
 	 */
-	public boolean renameLocalFile(String fileID,String oldRelativePath,String newRelativePath){
+	public boolean renameLocalFile(String oldRelativePath,String newRelativePath){
 		System.out.println("----FileManager----enter renameLocalFile,oldpath is: " +defaultRootPath + oldRelativePath + ";newPath is:" + defaultRootPath + newRelativePath);
 		boolean result =  FileOperateHelper.renameFile(defaultRootPath + oldRelativePath, defaultRootPath + newRelativePath);
 		if(result) System.out.println("----FileManager----rename successful");

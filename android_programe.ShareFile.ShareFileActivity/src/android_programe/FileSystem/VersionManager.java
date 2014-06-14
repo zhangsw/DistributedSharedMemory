@@ -3,7 +3,6 @@ package android_programe.FileSystem;
 import java.util.HashMap;
 import java.util.UUID;
 
-import android_programe.MemoryManager.FileMetaData;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 
@@ -74,12 +73,18 @@ public class VersionManager {
 	public void updateVersionNumber(String deviceName){
 		//更新map
 		addVersionNumber(deviceName,DEFAULT_ADDITION);
+		System.out.println("----VersionManager----updateVersionNumber----version number is:" + versionMap.getVersionNumber(deviceName));
 		//更新metaData
-		fileMetaData.setVersionID(versionMap.getVersionNumber(deviceName));
+		int old = fileMetaData.getVersionID();
+		fileMetaData.setVersionID(++old);
 	}
 	
 	public void updateVersionMap(String deviceName,int number){
 		versionMap.put(deviceName, number);
+	}
+	
+	public void updateVersionMap(VersionMap versionMap){
+		this.versionMap = versionMap;
 	}
 	
 	//向map中添加一个新设备，版本号为文件不存在
@@ -116,6 +121,14 @@ public class VersionManager {
 	//获取指定设备的versionNumber
 	public Integer getVersionNumber(String deviceName){
 		return versionMap.getVersionNumber(deviceName);
+	}
+	
+	/**
+	 * merge两个versionMap
+	 * @param versionMap
+	 */
+	public void mergeVersionMap(VersionMap versionMap){
+		this.versionMap.merge(versionMap);
 	}
 	
 	/**
