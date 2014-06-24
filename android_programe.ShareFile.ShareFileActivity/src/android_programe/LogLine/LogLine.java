@@ -11,7 +11,7 @@ import junit.framework.Assert;
 import android.os.Handler;
 import android.util.Log;
 import android_programe.FileSystem.FileMetaData;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.MemoryManager.MemoryManager;
 import android_programe.PsyLine.*;
 import android_programe.Util.FileConstant;
@@ -192,26 +192,26 @@ public class LogLine {
 	 * 发送文件的version,包括map和meta data
 	 * @param target	目标
 	 * @param fileID	文件的id
-	 * @param versionMap	
+	 * @param VectorClock	
 	 * @param relativePath	文件的相对路径
 	 */
 	public void sendFileVersion(String target, FileMetaData metaData,
-			VersionMap versionMap, String relativePath,String tag) {
+			VectorClock VectorClock, String relativePath,String tag) {
 		// TODO Auto-generated method stub
 		int index = getIndexByName(target);
 		if(index != -1){
 			DevicesInf di = devices.get(index);
-			psyLine.sendFileVersion(di.getID(), metaData,versionMap,relativePath,tag);
+			psyLine.sendFileVersion(di.getID(), metaData,VectorClock,relativePath,tag);
 		}
 	}
 	
-	public void sendFileVersionMap(String target, String fileID,
-			VersionMap versionMap, String relativePath, String tag) {
+	public void sendFileVectorClock(String target, String fileID,
+			VectorClock VectorClock, String relativePath, String tag) {
 		// TODO Auto-generated method stub
 		int index = getIndexByName(target);
 		if(index != -1){
 			DevicesInf di = devices.get(index);
-			psyLine.sendFileVersionMap(di.getID(), versionMap,relativePath,tag);
+			psyLine.sendFileVectorClock(di.getID(), VectorClock,relativePath,tag);
 		}
 	}
 	
@@ -224,19 +224,19 @@ public class LogLine {
 	}
 	
 	/**
-	 * 接收到文件的versionMap
+	 * 接收到文件的VectorClock
 	 * @param targetIp	目标
-	 * @param versionMap	
+	 * @param VectorClock	
 	 * @param fileID	文件的id
 	 * @param relativePath	文件的相对路径
 	 * @return
 	 */
 	
-	public boolean receiveVersionMap(String targetIp,VersionMap versionMap,String fileID,String relativePath,String tag){
+	public boolean receiveVectorClock(String targetIp,VectorClock VectorClock,String fileID,String relativePath,String tag){
 		int index = getIndexByID(targetIp);
 		if(index != -1){
-			Assert.assertNotNull("----LogLine----Error,versionMap is null",versionMap);
-			return memoryManager.receiveVersionMap(devices.get(index).getName(),fileID, versionMap, relativePath,tag);
+			Assert.assertNotNull("----LogLine----Error,VectorClock is null",VectorClock);
+			return memoryManager.receiveVectorClock(devices.get(index).getName(),fileID, VectorClock, relativePath,tag);
 		}
 		else return false;
 	}
@@ -244,18 +244,18 @@ public class LogLine {
 	/**
 	 * 接收到文件的version
 	 * @param targetIp
-	 * @param versionMap
+	 * @param VectorClock
 	 * @param metaData
 	 * @param relativePath
 	 * @param tag
 	 * @return
 	 */
-	public boolean receiveVersion(String targetIp, VersionMap versionMap,
+	public boolean receiveVersion(String targetIp, VectorClock VectorClock,
 			FileMetaData metaData, String relativePath, String tag) {
 		// TODO Auto-generated method stub
 		int index = getIndexByID(targetIp);
 		if(index != -1){
-			return memoryManager.receiveVersion(devices.get(index).getName(),versionMap,metaData, relativePath, tag);
+			return memoryManager.receiveVersion(devices.get(index).getName(),VectorClock,metaData, relativePath, tag);
 		}
 		else return false;
 	}

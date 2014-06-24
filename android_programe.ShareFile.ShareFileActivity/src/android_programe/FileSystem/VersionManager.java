@@ -17,7 +17,7 @@ public class VersionManager {
 	private VersionHistory versionHistory;
 	
 	//逻辑时钟，用于记录自己以及其他设备上文件版本号
-	private VersionMap versionMap;
+	private VectorClock vectorClock;
 	
 	private FileMetaData fileMetaData;
 
@@ -34,12 +34,12 @@ public class VersionManager {
 	public VersionManager(){
 		
 	}
-	//初始化versionMap,由于需要保存本地文件版本号，因此，map中至少有一个设备
+	//初始化vectorClock,由于需要保存本地文件版本号，因此，vector中至少有一个设备
 	public VersionManager(String deviceName,String path){
 		if(FileOperateHelper.fileExist(path)){
-			versionMap = new VersionMap();
+			vectorClock = new VectorClock();
 			System.out.println("----VersionManager----File:" + path + " exists");
-			versionMap.put(deviceName, INITIAL_VERSION_NUMBER);
+			vectorClock.put(deviceName, INITIAL_VERSION_NUMBER);
 			//为文件生成全局唯一的id
 			String fileID = UUID.randomUUID().toString();
 			long fileLength = FileOperateHelper.getFileLength(path);
@@ -47,8 +47,8 @@ public class VersionManager {
 			fileMetaData = new FileMetaData(fileID,INITIAL_VERSION_NUMBER, relaitvePath, path, fileLength, deviceName,FileOperateHelper.getFileModifiedTime(path));
 		}
 		else{
-			versionMap = new VersionMap();
-			versionMap.put(deviceName, FILENOTEXIST);
+			vectorClock = new VectorClock();
+			vectorClock.put(deviceName, FILENOTEXIST);
 			fileMetaData = new FileMetaData();
 			fileMetaData.setVersionID(FILENOTEXIST);
 		}
@@ -56,15 +56,15 @@ public class VersionManager {
 	
 	/*
 	public VersionManager(String deviceName,int versionNumber){
-		versionMap = new VersionMap();
-		versionMap.put(deviceName, versionNumber);
+		vectorClock = new vectorClock();
+		vectorClock.put(deviceName, versionNumber);
 	}
 	
 	*/
 	
 	//更新map中的一个设备及其版本号
 	public void updateVersionNumber(String deviceName,int number){
-		versionMap.put(deviceName, number);
+		vectorClock.put(deviceName, number);
 		System.out.println("local update version number,device: " + deviceName +" ,number is:" + number);
 		fileMetaData.setVersionID(number);
 	}
@@ -73,78 +73,82 @@ public class VersionManager {
 	public void updateVersionNumber(String deviceName){
 		//更新map
 		addVersionNumber(deviceName,DEFAULT_ADDITION);
-		System.out.println("----VersionManager----updateVersionNumber----version number is:" + versionMap.getVersionNumber(deviceName));
 		//更新metaData
 		int old = fileMetaData.getVersionID();
 		fileMetaData.setVersionID(++old);
+		System.out.println("----VersionManager----updateVersionNumber----version number is:" + old);
 	}
 	
-	public void updateVersionMap(String deviceName,int number){
-		versionMap.put(deviceName, number);
+	public int getFileVersion(){
+		return fileMetaData.getVersionID();
 	}
 	
-	public void updateVersionMap(VersionMap versionMap){
-		this.versionMap = versionMap;
+	public void updateVectorClock(String deviceName,int number){
+		vectorClock.put(deviceName, number);
+	}
+	
+	public void updateVectorClock(VectorClock vectorClock){
+		this.vectorClock = vectorClock;
 	}
 	
 	//向map中添加一个新设备，版本号为文件不存在
 	public void addDevice(String deviceName){
-		versionMap.put(deviceName, FILENOTEXIST);	
+		vectorClock.put(deviceName, FILENOTEXIST);	
 	}
 	
 	//向map中添加一个新设备
 	public void addDevice(String deviceName,int number){
-		versionMap.put(deviceName, number);
+		vectorClock.put(deviceName, number);
 	}
 	
 	//从map中删除一个设备及其版本号
 	public void deleteDevice(String deviceName){
-		versionMap.remove(deviceName);
+		vectorClock.remove(deviceName);
 	}
 	
 	
 	
 	//将指定对象的versionNumber增加number
 	public void addVersionNumber(String deviceName,int number){
-		Integer versionNumber = versionMap.getVersionNumber(deviceName);
+		Integer versionNumber = vectorClock.getVersionNumber(deviceName);
 		assert versionNumber != null :"Device not existing,can't add its versionNumber";
 		assert versionNumber >= 0 :"Device's versionNumber is illegal,it should be properly initialized";
 		versionNumber += number;
-		versionMap.put(deviceName, versionNumber);
+		vectorClock.put(deviceName, versionNumber);
 	}
 	
 	//初始化map中的一个设备的版本号
 	public void initialVersionNumber(String deviceName){
-		versionMap.put(deviceName, INITIAL_VERSION_NUMBER);
+		vectorClock.put(deviceName, INITIAL_VERSION_NUMBER);
 	}
 	
 	//获取指定设备的versionNumber
 	public Integer getVersionNumber(String deviceName){
-		return versionMap.getVersionNumber(deviceName);
+		return vectorClock.getVersionNumber(deviceName);
 	}
 	
 	/**
-	 * merge两个versionMap
-	 * @param versionMap
+	 * merge两个vectorClock
+	 * @param vectorClock
 	 */
-	public void mergeVersionMap(VersionMap versionMap){
-		this.versionMap.merge(versionMap);
+	public void mergeVectorClock(VectorClock vectorClock){
+		this.vectorClock.merge(vectorClock);
 	}
 	
 	/**
-	 * 设置文件的versionMap
-	 * @param versionMap
+	 * 设置文件的vectorClock
+	 * @param vectorClock
 	 */
-	public void setVersionMap(VersionMap versionMap){
-		this.versionMap = versionMap;
+	public void setVectorClock(VectorClock vectorClock){
+		this.vectorClock = vectorClock;
 	}
 	
 	/**
-	 * 获取文件的versionMap
+	 * 获取文件的vectorClock
 	 * @return
 	 */
-	public VersionMap getVersionMap(){
-		return versionMap;
+	public VectorClock getVectorClock(){
+		return vectorClock;
 	}
 	
 	/**

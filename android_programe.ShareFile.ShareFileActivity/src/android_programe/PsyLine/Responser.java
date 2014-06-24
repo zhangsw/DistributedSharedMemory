@@ -14,7 +14,7 @@ import java.net.SocketTimeoutException;
 import junit.framework.Assert;
 
 import android_programe.FileSystem.FileMetaData;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileUtil;
 
@@ -156,7 +156,7 @@ public class Responser implements Runnable{
     					
     					case FileConstant.FILEVERSION:{
     						try {
-								VersionMap versionMap = (VersionMap)ois.readUnshared();
+								VectorClock versionMap = (VectorClock)ois.readUnshared();
 								FileMetaData metaData = (FileMetaData)ois.readUnshared();
 								Assert.assertNotNull("----Responser----Error,versionMap is null",versionMap);
 								if(versionMap == null) System.out.println("----Responser----versionMap is null");

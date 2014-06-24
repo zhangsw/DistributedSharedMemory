@@ -6,7 +6,7 @@ import java.util.HashMap;
 import android_programe.FileSystem.FileManager;
 import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.MyFileObserver;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.MemoryManager.IMemoryManager;
 
 public class ConflictManager implements IResoluteOperator{
@@ -45,23 +45,23 @@ public class ConflictManager implements IResoluteOperator{
 	 * @param remoteDeviceId
 	 * @return
 	 */
-	public int detect(VersionMap localVersionMap,String localDeviceId,VersionMap remoteVersionMap,String remoteDeviceId){
+	public int detect(VectorClock localVersionMap,String localDeviceId,VectorClock remoteVersionMap,String remoteDeviceId){
 		return conflictDetect.detect(localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId);
 	}
 	
-	public int detect(VersionMap localVersionMap, String localDeviceId,
-			VersionMap remoteVersionMap, String remoteDeviceId,
+	public int detect(VectorClock localVersionMap, String localDeviceId,
+			VectorClock remoteVersionMap, String remoteDeviceId,
 			FileMetaData localMetaData, FileMetaData remoteMetaData) {
 		// TODO Auto-generated method stub
 		return conflictDetect.detect(localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId, localMetaData, remoteMetaData);
 	}
 	
-	public void resolute(String fileID,VersionMap localVersionMap,String localDeviceId,VersionMap remoteVersionMap,String remoteDeviceId,String relativePath){
+	public void resolute(String fileID,VectorClock localVersionMap,String localDeviceId,VectorClock remoteVersionMap,String remoteDeviceId,String relativePath){
 		conflictResolute.resoluteConfliction(fileID,localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId, relativePath,this);
 	}
 	
-	public void resolute(VersionMap localVersionMap, String localDeviceId,
-			VersionMap remoteVersionMap, String remoteDeviceId, String relativePath,
+	public void resolute(VectorClock localVersionMap, String localDeviceId,
+			VectorClock remoteVersionMap, String remoteDeviceId, String relativePath,
 			FileMetaData remoteMetaData) {
 		// TODO Auto-generated method stub
 		conflictResolute.resoluteConfliction(localVersionMap, localDeviceId, remoteVersionMap, remoteDeviceId, relativePath, remoteMetaData,this);

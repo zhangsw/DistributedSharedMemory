@@ -9,7 +9,7 @@ import java.util.Observable;
 
 import android.util.Log;
 import android_programe.FileSystem.FileMetaData;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.LogLine.LogLine;
 import android_programe.Util.FileConstant;
 
@@ -255,10 +255,10 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		logline.receiveFileData(targetIp,fileMetaData,file);
 	}
 	
-	public boolean receiveVersion(String targetIp, VersionMap versionMap,
+	public boolean receiveVersion(String targetIp, VectorClock VectorClock,
 			FileMetaData metaData, String relativePath, String tag) {
 		// TODO Auto-generated method stub
-		return logline.receiveVersion(targetIp, versionMap, metaData, relativePath, tag);
+		return logline.receiveVersion(targetIp, VectorClock, metaData, relativePath, tag);
 	}
 	
 	/**
@@ -308,7 +308,7 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		
 	}
 
-	public void sendFileVersionMap(VersionMap versionMap, String target) {
+	public void sendFileVectorClock(VectorClock VectorClock, String target) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -343,7 +343,7 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 	}
 
 
-	public void sendFileVersionMap(Object versionMap, Object target) {
+	public void sendFileVectorClock(Object VectorClock, Object target) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -354,27 +354,27 @@ public class PsyLine extends Observable implements FileTransfer,FileTransferCall
 		
 	}
 	
-	public void sendFileVersionMap(String id,VersionMap versionMap, String relativePath,String tag){
-		System.out.println("enter psyline send versionMap");
+	public void sendFileVectorClock(String id,VectorClock VectorClock, String relativePath,String tag){
+		System.out.println("enter psyline send VectorClock");
 		int index = getIndexByTargetID(id);
 		if(index != -1){
-			((SocketIO)socketList.get(index)).sendFileVersionMap(versionMap, relativePath, tag);
+			((SocketIO)socketList.get(index)).sendFileVectorClock(VectorClock, relativePath, tag);
 		}
 	}
 
 
 	public void sendFileVersion(String id, FileMetaData metaData,
-			VersionMap versionMap, String relativePath,String tag) {
+			VectorClock VectorClock, String relativePath,String tag) {
 		// TODO Auto-generated method stub
-		System.out.println("enter psyline send versionMap");
+		System.out.println("enter psyline send VectorClock");
 		int index = getIndexByTargetID(id);
 		if(index != -1){
-			((SocketIO)socketList.get(index)).sendFileVersion(versionMap, metaData, relativePath, tag);
+			((SocketIO)socketList.get(index)).sendFileVersion(VectorClock, metaData, relativePath, tag);
 			/*
 			SocketIO sio = (SocketIO)socketList.get(index);
 			int type = sio.getType();
-			if(type == 0)  psyTcpClient.sendFileVersionMap(sio,versionMap,fileID,relativePath,tag);
-			else if(type == 1) psyTcpServer.sendFileVersionMap(sio,versionMap,fileID,relativePath,tag);
+			if(type == 0)  psyTcpClient.sendFileVectorClock(sio,VectorClock,fileID,relativePath,tag);
+			else if(type == 1) psyTcpServer.sendFileVectorClock(sio,VectorClock,fileID,relativePath,tag);
 			*/
 
 		}

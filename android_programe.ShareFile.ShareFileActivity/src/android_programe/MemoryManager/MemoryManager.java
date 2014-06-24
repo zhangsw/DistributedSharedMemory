@@ -16,7 +16,7 @@ import android_programe.FileSystem.FileManager;
 import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.MyFileObserver;
 import android_programe.FileSystem.VersionManager;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.LogLine.LogLine;
 import android_programe.Storage.StorageOperator;
 import android_programe.Util.FileConstant;
@@ -42,8 +42,8 @@ public class MemoryManager implements IMemoryManager{
 	
 	private ArrayList <String> readyForSyn;
 	
-	private static String VERSIONMAP = "one";	//第一次发送versionMap的标记
-	private static String VERSIONMAPACK = "two";	//已经发送过versionMap,接收到的是回应，用于判断对方是否已经知道了自己的versionMap
+	private static String VectorClock = "one";	//第一次发送VectorClock的标记
+	private static String VectorClockACK = "two";	//已经发送过VectorClock,接收到的是回应，用于判断对方是否已经知道了自己的VectorClock
 	
 	public MemoryManager(String id) throws IOException{
 		
@@ -101,89 +101,101 @@ public class MemoryManager implements IMemoryManager{
 		
 	}
 	
+	/**
+	 * 发送文件的version，包括了metadata，vectorClock
+	 * @param target	目标
+	 * @param relativePath	文件的相对路径
+	 * @param tag	标记
+	 */
 	private void sendFileVersion(String target,String relativePath,String tag){
 		MyFileObserver ob = fileManager.getMyFileObserver(defaultRootPath + relativePath);
 		if(ob != null){
-			System.out.println("before logline sendFileVersionMap");
-			logLine.sendFileVersion(target, ob.getFileMetaData(), ob.getVersionMap(), relativePath,tag);
+			System.out.println("before logline sendFileVectorClock");
+			logLine.sendFileVersion(target, ob.getFileMetaData(), ob.getVectorClock(), relativePath,tag);
 		}
 	}
 	
-	private void sendFileVersionMap(String target,MyFileObserver ob,String tag){
+	private void sendFileVersion(String target, MyFileObserver m, String tag){
+		String relativePath = m.getPath().substring(defaultRootPath.length());
+		logLine.sendFileVersion(target, m.getFileMetaData(), m.getVectorClock(), relativePath, tag);
+	
+	}
+	
+	private void sendFileVectorClock(String target,MyFileObserver ob,String tag){
 		if(ob != null){
-			logLine.sendFileVersionMap(target, ob.getFileMetaData().getFileID(), ob.getVersionMap(), ob.getFileMetaData().getRelativePath(), tag);
+			logLine.sendFileVectorClock(target, ob.getFileMetaData().getFileID(), ob.getVectorClock(), ob.getFileMetaData().getRelativePath(), tag);
 		}
 	}
 	
 	/**
-	 * 发送文件的versionMap
+	 * 发送文件的VectorClock
 	 * @param fileID	需要发送的文件id
-	 * @param versionMap	版本map
+	 * @param VectorClock	版本map
 	 * @param target	目的地
 	 */
-	private void sendFileVersionMap(String target,String fileID,VersionMap versionMap,String relativePath,String tag){
-		logLine.sendFileVersionMap(target,fileID,versionMap,relativePath,tag);
+	private void sendFileVectorClock(String target,String fileID,VectorClock VectorClock,String relativePath,String tag){
+		logLine.sendFileVectorClock(target,fileID,VectorClock,relativePath,tag);
 	}
 	
 	/**
-	 * 接收到来自target的versionMap
+	 * 接收到来自target的VectorClock
 	 * @param target	信息来源
 	 * @param fileID	文件id
-	 * @param RemoteVersionMap 版本map
+	 * @param RemoteVectorClock 版本map
 	 * 
 	 */
 	
-	public boolean receiveVersionMap(String target,String fileID,VersionMap remoteVersionMap,String relativePath,String tag){
-		System.out.println("receive versionMap,relativePath is " + relativePath);
+	public boolean receiveVectorClock(String target,String fileID,VectorClock remoteVectorClock,String relativePath,String tag){
+		System.out.println("receive VectorClock,relativePath is " + relativePath);
 		String path = defaultRootPath + relativePath;
-		VersionMap localVersionMap = fileManager.getVersionMap(path);
+		VectorClock localVectorClock = fileManager.getVectorClock(path);
 		
-		if(localVersionMap != null){	//存在该文件的文件结点
+		if(localVectorClock != null){	//存在该文件的文件结点
 			//对收到的versinMap进行冲突检测，若需要更新本地的版本号，则进行更新
-			int detectResult = conflictManager.detect(localVersionMap, localDeviceId, remoteVersionMap, target);
+			int detectResult = conflictManager.detect(localVectorClock, localDeviceId, remoteVectorClock, target);
 			//if发生冲突
 			if(detectResult == ConflictManager.CONFLICT){
 				//冲突消解
-				if(tag.equals(VERSIONMAP)){	//对方还不知道自己的versionMap
-					sendFileVersionMap(target,fileID,localVersionMap,relativePath,VERSIONMAPACK);
+				if(tag.equals(VectorClock)){	//对方还不知道自己的VectorClock
+					sendFileVectorClock(target,fileID,localVectorClock,relativePath,VectorClockACK);
 				}
-				conflictManager.resolute(fileID,localVersionMap, localDeviceId, remoteVersionMap,target,relativePath);
+				conflictManager.resolute(fileID,localVectorClock, localDeviceId, remoteVectorClock,target,relativePath);
 			}
 			// 远端有更新
 			else if(detectResult == ConflictManager.LOCALNEEDUPDATE){
 				//修改远端发过来的map中自己的版本号
-				remoteVersionMap.put(localDeviceId, localVersionMap.getVersionNumber(localDeviceId));
-				//将修改的versionMap转发到其他设备
+				remoteVectorClock.put(localDeviceId, localVectorClock.getVersionNumber(localDeviceId));
+				//将修改的VectorClock转发到其他设备
 				List<String>targets = fileManager.getMyFileObserver(path).getTargetsList();
-				//转发versionMap
-				//forwardVersionMap(targets,target,fileID,remoteVersionMap,relativePath);
+				//转发VectorClock
+				//forwardVectorClock(targets,target,fileID,remoteVectorClock,relativePath);
 				//向target请求该文件
 				fetchFile(target,relativePath);
 			}
 			else if(detectResult == ConflictManager.REMOTENEEDUPDATE){
 				//如果远端还未获得本地更新，向远端发送通知
-				sendFileVersionMap(target,fileID,localVersionMap,relativePath,VERSIONMAP);
+				sendFileVectorClock(target,fileID,localVectorClock,relativePath,VectorClock);
 			}
 		}
 		else{	//本地不存在该文件的文件结点
 			//TODO
-			if(tag.equals(VERSIONMAP)){
+			if(tag.equals(VectorClock)){
 				//创建新的文件结点
 				boolean success = fileManager.createEmptyFileNode(path, fileID);
 				if(success){
-					//更新这个文件结点的versionMap，本地version为-1（不存在该文件），远端version则为发送过来的
+					//更新这个文件结点的VectorClock，本地version为-1（不存在该文件），远端version则为发送过来的
 					//更新本地保存的远端的版本号
-					Assert.assertNotNull("----MemoryManager----Error,VersionManager is null",remoteVersionMap);
-					System.out.println("----MemoryManager----before updateVersionMap");
+					Assert.assertNotNull("----MemoryManager----Error,VersionManager is null",remoteVectorClock);
+					System.out.println("----MemoryManager----before updateVectorClock");
 					if(fileManager == null) System.out.println("fileManager is null");
-					if(remoteVersionMap == null) System.out.println("----MemoryManager----remoteVersionMap is null");
-					fileManager.updateVersionMap(path, target, remoteVersionMap.getVersionNumber(target));
+					if(remoteVectorClock == null) System.out.println("----MemoryManager----remoteVectorClock is null");
+					fileManager.updateVectorClock(path, target, remoteVectorClock.getVersionNumber(target));
 					//修改远端发过来的map中自己的版本号
-					remoteVersionMap.put(localDeviceId, VersionManager.FILENOTEXIST);
-					//将修改的versionMap转发到其他设备
+					remoteVectorClock.put(localDeviceId, VersionManager.FILENOTEXIST);
+					//将修改的VectorClock转发到其他设备
 					List<String>targets = fileManager.getMyFileObserver(path).getTargetsList();
-					//转发versionMap
-					//forwardVersionMap(targets,target,fileID,remoteVersionMap,relativePath);
+					//转发VectorClock
+					//forwardVectorClock(targets,target,fileID,remoteVectorClock,relativePath);
 					//向target请求该文件
 					fetchFile(target,relativePath);
 				}
@@ -196,23 +208,23 @@ public class MemoryManager implements IMemoryManager{
 		return true;
 	}
 	
-	public boolean receiveVersion(String target, VersionMap remoteVersionMap,
+	public boolean receiveVersion(String target, VectorClock remoteVectorClock,
 			FileMetaData remoteMetaData, String relativePath, String tag) {
 		// TODO Auto-generated method stub
 		String path = defaultRootPath + relativePath;
-		VersionMap localVersionMap = fileManager.getVersionMap(path);
+		VectorClock localVectorClock = fileManager.getVectorClock(path);
 		FileMetaData localMetaData = fileManager.getFileMetaData(path);
 		
-		if(localVersionMap != null){	//存在该文件的文件结点
+		if(localVectorClock != null){	//存在该文件的文件结点
 			//对收到的versinMap进行冲突检测，若需要更新本地的版本号，则进行更新
-			int detectResult = conflictManager.detect(localVersionMap, localDeviceId, remoteVersionMap, target, localMetaData, remoteMetaData);
+			int detectResult = conflictManager.detect(localVectorClock, localDeviceId, remoteVectorClock, target, localMetaData, remoteMetaData);
 			//if发生冲突
 			if(detectResult == ConflictManager.CONFLICT){
 				//冲突消解
-				if(tag.equals(VERSIONMAP)){	//对方还不知道自己的versionMap
-					sendFileVersion(target,relativePath,VERSIONMAPACK);
+				if(tag.equals(VectorClock)){	//对方还不知道自己的VectorClock
+					sendFileVersion(target,relativePath,VectorClockACK);
 				}
-				conflictManager.resolute(localVersionMap, localDeviceId, remoteVersionMap,target,relativePath,remoteMetaData);
+				conflictManager.resolute(localVectorClock, localDeviceId, remoteVectorClock,target,relativePath,remoteMetaData);
 			}
 			// 远端有更新
 			else if(detectResult == ConflictManager.LOCALNEEDUPDATE){
@@ -221,31 +233,32 @@ public class MemoryManager implements IMemoryManager{
 			}
 			else if(detectResult == ConflictManager.REMOTENEEDUPDATE){
 				//如果远端还未获得本地更新，向远端发送通知
-				sendFileVersion(target,relativePath,VERSIONMAP);
+				sendFileVersion(target,relativePath,VectorClock);
 			}
 		}
 		else{	//本地不存在该文件的文件结点
 			//TODO
-			if(tag.equals(VERSIONMAP)){
+			if(tag.equals(VectorClock)){
 				//创建新的文件结点
 				boolean success = fileManager.createEmptyFileNode(path, remoteMetaData.getFileID());
 				if(success){
-					//更新这个文件结点的versionMap，本地version为-1（不存在该文件），远端version则为发送过来的
+					//更新这个文件结点的VectorClock，本地version为-1（不存在该文件），远端version则为发送过来的
 					//更新本地保存的远端的版本号
-					Assert.assertNotNull("----MemoryManager----Error,VersionManager is null",remoteVersionMap);
-					System.out.println("----MemoryManager----before updateVersionMap");
+					Assert.assertNotNull("----MemoryManager----Error,VersionManager is null",remoteVectorClock);
+					System.out.println("----MemoryManager----before updateVectorClock");
 					if(fileManager == null) System.out.println("fileManager is null");
-					if(remoteVersionMap == null) System.out.println("----MemoryManager----remoteVersionMap is null");
-					//更新versionMap
-					fileManager.updateVersionMap(path, remoteVersionMap);
+					if(remoteVectorClock == null) System.out.println("----MemoryManager----remoteVectorClock is null");
+					//更新VectorClock
+					fileManager.updateVectorClock(path, remoteVectorClock);
+					System.out.println("----MemoryManager----receiveVersion----has update vector clock");
 					/*
-					fileManager.updateVersionMap(path, target, remoteVersionMap.getVersionNumber(target));
+					fileManager.updateVectorClock(path, target, remoteVectorClock.getVersionNumber(target));
 					//修改远端发过来的map中自己的版本号
-					remoteVersionMap.put(localDeviceId, VersionManager.FILENOTEXIST);
-					//将修改的versionMap转发到其他设备
+					remoteVectorClock.put(localDeviceId, VersionManager.FILENOTEXIST);
+					//将修改的VectorClock转发到其他设备
 					List<String>targets = fileManager.getMyFileObserver(path).getTargetsList();
-					//转发versionMap
-					//forwardVersionMap(targets,target,fileID,remoteVersionMap,relativePath);
+					//转发VectorClock
+					//forwardVectorClock(targets,target,fileID,remoteVectorClock,relativePath);
 					 * 
 					 */
 					//向target请求该文件
@@ -261,14 +274,14 @@ public class MemoryManager implements IMemoryManager{
 	}
 	
 	/**
-	 * 转发收到的versionMap
+	 * 转发收到的VectorClock
 	 * @param targets	需要转发的目标
 	 * @param sourceID	不需要转发的目标
 	 * @param fileID	文件的id
-	 * @param versionMap	需要转发的versionMap
+	 * @param VectorClock	需要转发的VectorClock
 	 * @param relativePath	文件的相对路径
 	 */
-	public void forwardVersionMap(List<String> targets,String sourceID,String fileID,VersionMap versionMap,String relativePath){
+	public void forwardVectorClock(List<String> targets,String sourceID,String fileID,VectorClock VectorClock,String relativePath){
 		
 	}
 	
@@ -294,9 +307,9 @@ public class MemoryManager implements IMemoryManager{
 			}
 			else{	
 				//先更新metaData以及versinMap
-				System.out.println("receive file that is wanted,file version is " + fileMetaData.getVersionID());
+				System.out.println("----MemoryManager----receive file that is wanted,file version is " + fileMetaData.getVersionID());
 				ob.setFileMetaData(fileMetaData);
-				//ob.updateVersionMap(localDeviceId, fileMetaData.getVersionID());
+				//ob.updateVectorClock(localDeviceId, fileMetaData.getVersionID());
 				if(FileOperateHelper.fileExist(defaultRootPath + relativePath)){
 					//有旧版本文件存在，删除它
 					//TODO
@@ -362,7 +375,7 @@ public class MemoryManager implements IMemoryManager{
 			System.out.println("remote: "+ fileMetaData.getFileSize() + ", "+ fileMetaData.getFileCreator() + "," + fileMetaData.getFileID() + ","+fileMetaData.getRelativePath() + ", "+ fileMetaData.getVersionID() + ", " +fileMetaData.getModifiedTime());
 			if(localMetaData.equals(fileMetaData)){
 				System.out.println("metaData is the same");
-				fileManager.getMyFileObserver(absolutePath).updateVersionMap(target, fileMetaData.getVersionID());
+				fileManager.getMyFileObserver(absolutePath).updateVectorClock(target, fileMetaData.getVersionID());
 			}
 			else{
 				//TODO
@@ -572,13 +585,13 @@ public class MemoryManager implements IMemoryManager{
 				//System.out.println("versionlog exists,initialize versionlog");
 				BufferedReader br = new BufferedReader(new FileReader(file));
 				//DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
-				LinkedHashMap<String,Integer> versionMap = StorageOperator.readVersionNumber(br);
-				//System.out.println("----MemoryManager----initializeVersionNumber:vertsionMap's size is:" + versionMap.size());
-				Iterator<Entry<String, Integer>> iter = versionMap.entrySet().iterator();
+				LinkedHashMap<String,Integer> VectorClock = StorageOperator.readVersionNumber(br);
+				//System.out.println("----MemoryManager----initializeVersionNumber:vertsionMap's size is:" + VectorClock.size());
+				Iterator<Entry<String, Integer>> iter = VectorClock.entrySet().iterator();
 				while(iter.hasNext()){
 					Map.Entry<String,Integer> entry =(Map.Entry<String,Integer>)iter.next();
 					//System.out.println("----MemoryManager----initializeVersionNumber: " + entry.getKey() + ":" + entry.getValue());
-					fileManager.updateVersionMap(entry.getKey(), target, entry.getValue());
+					fileManager.updateVectorClock(entry.getKey(), target, entry.getValue());
 				}
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -703,7 +716,7 @@ public class MemoryManager implements IMemoryManager{
 				}
 			}else{
 				//文件
-				sendFileVersionMap(target,m,VERSIONMAP);
+				sendFileVersion(target,m,VectorClock);
 			}
 		}
 	}
@@ -803,6 +816,7 @@ public class MemoryManager implements IMemoryManager{
 	}
 	
 	private void saveVersionNumber(BufferedWriter bw,MyFileObserver mo,String target) throws IOException{
+		//TODO
 		int versionNumber = mo.getVersionNumber(target);
 		StorageOperator.writeVersionNumber(bw, mo.getPath(), versionNumber);
 		if(mo.hasChild()){
@@ -839,10 +853,10 @@ public class MemoryManager implements IMemoryManager{
 			super.handleMessage(msg);
 			MessageObj mo = (MessageObj)msg.obj;
 			switch(mo.getType()){
-			case FileConstant.SENDFILEMESSAGE:{											//发送文件数据,其实是发送versionMap
+			case FileConstant.SENDFILEMESSAGE:{											//发送文件数据,其实是发送VectorClock
 				
 				System.out.println("-----sendfilemessage------relativeFilePath is " + mo.getRelativeFilepath() + ",target is " + mo.getTarget());
-				sendFileVersion(mo.getTarget(),mo.getRelativeFilepath(),VERSIONMAP);
+				sendFileVersion(mo.getTarget(),mo.getRelativeFilepath(),VectorClock);
 				
 				//sendFile(mo.getTarget(),mo.getFilepath(),mo.getRelativeFilepath());
 				
@@ -892,15 +906,6 @@ public class MemoryManager implements IMemoryManager{
 		}
 	}
 
-
-	/*
-	public void renameLocalFile(String oldRelativePath,
-			String newRelativePath) {
-		// TODO Auto-generated method stub
-		fileManager.renameLocalFile(fileID, oldRelativePath, newRelativePath);
-		
-	}
-*/
 	public void createEmptyFileNode(String path, String fileID) {
 		// TODO Auto-generated method stub
 		fileManager.createEmptyFileNode(path, fileID);
@@ -908,7 +913,7 @@ public class MemoryManager implements IMemoryManager{
 
 	public void renameLocalFile(String oldRelativePath, String newRelativePath) {
 		// TODO Auto-generated method stub
-		
+		fileManager.renameLocalFile(oldRelativePath, newRelativePath);
 	}
 
 	

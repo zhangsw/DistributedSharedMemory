@@ -11,7 +11,7 @@ import java.util.Map.Entry;
  * @author zhangsw
  *
  */
-public class VersionMap implements Serializable{
+public class VectorClock implements Serializable{
 	//用于保存设备id同其版本号
 	public static final int EQUAL = 0;
 	public static final int GREATER = 1;
@@ -20,7 +20,7 @@ public class VersionMap implements Serializable{
 	
 	private HashMap<String,Integer> versionMap;
 	
-	public VersionMap(){
+	public VectorClock(){
 		versionMap = new HashMap<String,Integer>();
 	}
 	
@@ -55,7 +55,7 @@ public class VersionMap implements Serializable{
 	 * 合并两个versionMap，合并规则利用vector clock
 	 * @param m
 	 */
-	public synchronized void merge(VersionMap m){
+	public synchronized void merge(VectorClock m){
 		Iterator<Entry<String,Integer>> iter = m.versionMap.entrySet().iterator();
 		while(iter.hasNext()){
 			Entry<String,Integer> entry = iter.next();
@@ -70,7 +70,7 @@ public class VersionMap implements Serializable{
 	 * @param m 需要比较的对象
 	 * @return 比较结果，0表示相等，1表示大于，2表示小于，4表示不确定
 	 */
-	public int compareTo(VersionMap m){
+	public int compareTo(VectorClock m){
 		int result = -1; 
 		Iterator<Entry<String,Integer>> iter = versionMap.entrySet().iterator();
 		while(iter.hasNext()){

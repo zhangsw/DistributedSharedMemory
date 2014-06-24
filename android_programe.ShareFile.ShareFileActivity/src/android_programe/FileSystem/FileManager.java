@@ -100,17 +100,17 @@ public class FileManager implements IFileManager {
 		else return false;
 	}
 	
-	public boolean updateVersionMap(String path,String deviceId,Integer versionNumber){
+	public boolean updateVectorClock(String path,String deviceId,Integer versionNumber){
 		if(mObservers.containsKey(path)){	//存在文件结点
-			//System.out.println("----FileManager----updateVersionMap:observer exists");
-			mObservers.get(path).updateVersionMap(deviceId, versionNumber);
+			//System.out.println("----FileManager----updateVectorClock:observer exists");
+			mObservers.get(path).updateVectorClock(deviceId, versionNumber);
 			return true;
 		}else return false;
 	}
 	
-	public boolean updateVersionMap(String path,VersionMap versionMap){
+	public boolean updateVectorClock(String path,VectorClock VectorClock){
 		if(mObservers.containsKey(path)){
-			mObservers.get(path).updateVersionMap(versionMap);
+			mObservers.get(path).updateVectorClock(VectorClock);
 			return true;
 		}else return false;
 	}
@@ -119,11 +119,11 @@ public class FileManager implements IFileManager {
 	private void updateVersion(MyFileObserver ob,String deviceId){
 		ob.fileModified(deviceId);
 		
-		System.out.println(ob.getPath() + " has update its local version,version number is " + ob.getVersionNumber(deviceId));
+		System.out.println(ob.getPath() + " has update its local version,version number is " + ob.getFileVersion());
 	}
 	
 	public boolean updateLocalVersion(String path,int versionNumber){
-		return updateVersionMap(path,localDeviceId,versionNumber);
+		return updateVectorClock(path,localDeviceId,versionNumber);
 	}
 	
 	/**
@@ -255,13 +255,13 @@ public class FileManager implements IFileManager {
 	}
 	
 	/**
-	 * 获取文件的versionMap
+	 * 获取文件的VectorClock
 	 * @param fileID 文件的id
 	 * @return
 	 */
-	public VersionMap getVersionMap(String path){
+	public VectorClock getVectorClock(String path){
 		if(mObservers.containsKey(path))
-			return mObservers.get(path).getVersionMap();
+			return mObservers.get(path).getVectorClock();
 		else return null;
 	}
 	
@@ -279,7 +279,6 @@ public class FileManager implements IFileManager {
 	
 	/**
 	 * 重命名本地文件
-	 * @param fileID
 	 * @param oldRelativePath
 	 * @param newRelativePath
 	 */

@@ -1,6 +1,6 @@
 package android_programe.PsyLine;
 
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 
 /**
  * 文件传输接口，定义了文件传输中的各个调用
@@ -39,10 +39,10 @@ public interface FileTransfer {
 	
 	/**
 	 * 发送文件的版本map
-	 * @param versionMap	需要发送的版本map
+	 * @param VectorClock	需要发送的版本map
 	 * @param target	送往的对象
 	 */
-	public void sendFileVersionMap(Object versionMap,Object target);
+	public void sendFileVectorClock(Object vectorClock,Object target);
 	
 	//发送操作指令
 	public void sendCommand(String command);

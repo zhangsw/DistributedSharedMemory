@@ -3,7 +3,7 @@ package android_programe.PsyLine;
 import java.io.File;
 
 import android_programe.FileSystem.FileMetaData;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 
 public interface FileTransferCallBack {
 	public void connectionFailure(String id);
@@ -21,7 +21,7 @@ public interface FileTransferCallBack {
 
 	public boolean receiveMakeDir(String ip, String string);
 
-	public boolean receiveVersion(String ip, VersionMap versionMap,
+	public boolean receiveVersion(String ip, VectorClock versionMap,
 			FileMetaData metaData, String relativePath, String tag);
 
 	public void receiveFileUpdate(String ip, FileMetaData fileMetaData);

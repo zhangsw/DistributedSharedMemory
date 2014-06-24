@@ -125,6 +125,10 @@ public class MyFileObserver{
 		return new VersionManager();
 	}
 	
+	public int getFileVersion(){
+		return versionManager.getFileVersion();
+	}
+	
 	//获取本地存储的id设备的版本号
 	public int getVersionNumber(String deviceId){
 		return versionManager.getVersionNumber(deviceId);
@@ -134,28 +138,28 @@ public class MyFileObserver{
 		versionManager.updateVersionNumber(deviceId,versionNumber);
 	}
 	
-	public void updateVersionMap(String deviceId,Integer versionNumber){
-		versionManager.updateVersionMap(deviceId, versionNumber);
+	public void updateVectorClock(String deviceId,Integer versionNumber){
+		versionManager.updateVectorClock(deviceId, versionNumber);
 	}
 	
-	public void updateVersionMap(VersionMap versionMap){
-		versionManager.updateVersionMap(versionMap);
+	public void updateVectorClock(VectorClock VectorClock){
+		versionManager.updateVectorClock(VectorClock);
 	}
 	
 	
 	/**
-	 * 设置文件的versionMap
-	 * @param versionMap
+	 * 设置文件的VectorClock
+	 * @param VectorClock
 	 */
-	public void setVersionMap(VersionMap versionMap){
-		versionManager.setVersionMap(versionMap);
+	public void setVectorClock(VectorClock VectorClock){
+		versionManager.setVectorClock(VectorClock);
 	}
 	/**
 	 * 获取文件的版本Map
 	 * @return
 	 */
-	public VersionMap getVersionMap(){
-		return versionManager.getVersionMap();
+	public VectorClock getVectorClock(){
+		return versionManager.getVectorClock();
 	}
 	
 	public void setModifiedTime(long time){
@@ -307,7 +311,7 @@ public class MyFileObserver{
 			return false;
 		else{
 			mTargets.put(target, handler);
-			//向versionMap中添加设备
+			//向VectorClock中添加设备
 			versionManager.addDevice(target);
 			Iterator<MyFileObserver> iter = lChildObserver.iterator();
 			while(iter.hasNext()){

@@ -1,7 +1,7 @@
 package android_programe.Conflict;
 
 import android_programe.FileSystem.FileMetaData;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 
 /**
  * 冲突检测
@@ -16,24 +16,24 @@ public class ConflictDetect {
 	
 	/**
 	 * 对两个versionMap进行比较
-	 * @param localVersionMap
+	 * @param localVectorClock
 	 * @param localDeviceId
-	 * @param remoteVersionMap
+	 * @param remoteVectorClock
 	 * @param remoteDeviceId
 	 * @return
 	 */
-	public int detect(VersionMap localVersionMap,String localDeviceId,VersionMap remoteVersionMap,String remoteDeviceId){
+	public int detect(VectorClock localVectorClock,String localDeviceId,VectorClock remoteVectorClock,String remoteDeviceId){
 		//获取本地versionMap中保存的本地版本号
-		int localNumberInLocalVersion = localVersionMap.getVersionNumber(localDeviceId);
-		if(localVersionMap.getVersionNumber(remoteDeviceId) == null) System.out.println("version numbers is null");
+		int localNumberInLocalVersion = localVectorClock.getVersionNumber(localDeviceId);
+		if(localVectorClock.getVersionNumber(remoteDeviceId) == null) System.out.println("version numbers is null");
 		//获取本地versinMap中保存的远端版本号
-		int remoteNumberInLocalVersion = localVersionMap.getVersionNumber(remoteDeviceId);
+		int remoteNumberInLocalVersion = localVectorClock.getVersionNumber(remoteDeviceId);
 		
 		//获取远端versionMap中保存的本地版本号
-		int localNumberInRemoteVersion = remoteVersionMap.getVersionNumber(localDeviceId);
+		int localNumberInRemoteVersion = remoteVectorClock.getVersionNumber(localDeviceId);
 		
 		//获取远端versionMap中保存的远端版本号
-		int remoteNumberInRemoteVersion = remoteVersionMap.getVersionNumber(remoteDeviceId);
+		int remoteNumberInRemoteVersion = remoteVectorClock.getVersionNumber(remoteDeviceId);
 		
 		System.out.println("localNumberInLocalVersion is:" + localNumberInLocalVersion);
 		System.out.println("remoteNumberInLocalVersion is:" + remoteNumberInLocalVersion);
@@ -61,7 +61,7 @@ public class ConflictDetect {
 			if(remoteNumberInLocalVersion < remoteNumberInRemoteVersion){
 				//本地还未获悉远端的更新，本地需要更新
 				System.out.println("---local needs update---");
-				localVersionMap.put(remoteDeviceId, remoteNumberInRemoteVersion);	//更新本地的versionMap，
+				localVectorClock.put(remoteDeviceId, remoteNumberInRemoteVersion);	//更新本地的versionMap，
 				return ConflictManager.LOCALNEEDUPDATE;
 			}
 			else if(remoteNumberInLocalVersion == remoteNumberInRemoteVersion){
@@ -78,32 +78,32 @@ public class ConflictDetect {
 		
 	}
 
-	public int detect(VersionMap localVersionMap, String localDeviceId,
-			VersionMap remoteVersionMap, String remoteDeviceId,
+	public int detect(VectorClock localVectorClock, String localDeviceId,
+			VectorClock remoteVectorClock, String remoteDeviceId,
 			FileMetaData localMetaData, FileMetaData remoteMetaData) {
 		// TODO Auto-generated method stub
 		int result = -1;
-		int compareResult = localVersionMap.compareTo(remoteVersionMap);
+		int compareResult = localVectorClock.compareTo(remoteVectorClock);
 		switch(compareResult){
-		case VersionMap.EQUAL:{
+		case VectorClock.EQUAL:{
 			System.out.println("----ConflictDetect----detect----both know the version");
 			result = ConflictManager.BOTHKNOW;
 		}break;
-		case VersionMap.GREATER:{
+		case VectorClock.GREATER:{
 			//远端需要更新
 			result = ConflictManager.REMOTENEEDUPDATE;
 		}break;
-		case VersionMap.LESSER:{
+		case VectorClock.LESSER:{
 			//本地需要更新
 			result = ConflictManager.LOCALNEEDUPDATE;
-			localVersionMap.merge(remoteVersionMap);
+			localVectorClock.merge(remoteVectorClock);
 		}break;
-		case VersionMap.UNDEFINED:{
+		case VectorClock.UNDEFINED:{
 			// 没有相对次序，可能会产生冲突，判断metaData
 			if(localMetaData.getModifiedTime()==remoteMetaData.getModifiedTime()){
 				//file is same
 				result = ConflictManager.BOTHKNOW;
-				localVersionMap.merge(remoteVersionMap);
+				localVectorClock.merge(remoteVectorClock);
 			}
 			else{
 				result = ConflictManager.CONFLICT;

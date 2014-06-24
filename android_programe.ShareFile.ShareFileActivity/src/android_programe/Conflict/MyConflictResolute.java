@@ -6,7 +6,7 @@ import android_programe.FileSystem.FileManager;
 import android_programe.FileSystem.FileMetaData;
 import android_programe.FileSystem.MyFileObserver;
 import android_programe.FileSystem.VersionManager;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 import android_programe.Util.FileUtil;
@@ -21,8 +21,8 @@ public class MyConflictResolute extends ConflictResolute{
 	
 	
 	@Override
-	public void resoluteConfliction(String fileID,VersionMap localVersionMap,
-			String localDeviceId, VersionMap remoteVersionMap,
+	public void resoluteConfliction(String fileID,VectorClock localVectorClock,
+			String localDeviceId, VectorClock remoteVectorClock,
 			String remoteDeviceId, String relativePath, IResoluteOperator iro) {
 		// TODO Auto-generated method stub
 		//将冲突文件添加到conflictFile中
@@ -35,20 +35,20 @@ public class MyConflictResolute extends ConflictResolute{
 		String newRelativePath = relativePath.substring(0, relativePath.length()-fileName.length()) + newFileName;
 		//iro.renameLocalFile(fileID, relativePath,newRelativePath);
 		//更新版本信息
-		localVersionMap.put(remoteDeviceId, VersionManager.FILENOTEXIST);
+		localVectorClock.put(remoteDeviceId, VersionManager.FILENOTEXIST);
 		//创建文件名+remoteDeviceID的文件结点
 		String path = FileConstant.DEFAULTSHAREPATH + relativePath + remoteDeviceId;
 		iro.createEmptyFileNode(path, fileID);
 		//更新remote设备的版本号
-		fileManager.updateVersionMap(path, remoteDeviceId, remoteVersionMap.getVersionNumber(remoteDeviceId));
+		fileManager.updateVectorClock(path, remoteDeviceId, remoteVectorClock.getVersionNumber(remoteDeviceId));
 		//请求文件
 		iro.fetchFile(remoteDeviceId, fileID, relativePath);
 		
 	}
 	
 	@Override
-	public void resoluteConfliction(VersionMap localVersionMap,
-			String localDeviceId, VersionMap remoteVersionMap,
+	public void resoluteConfliction(VectorClock localVectorClock,
+			String localDeviceId, VectorClock remoteVectorClock,
 			String remoteDeviceId, String relativePath,
 			FileMetaData remoteMetaData, ConflictManager iro) {
 		// TODO Auto-generated method stub
@@ -59,14 +59,15 @@ public class MyConflictResolute extends ConflictResolute{
 		long time = fileManager.getMyFileObserver(FileConstant.DEFAULTSHAREPATH + relativePath).getModifiedTime();
 		String newFileName = fileRename(fileName,localDeviceId,FileUtil.getTimeFromLong(time));
 		String newRelativePath = relativePath.substring(0, relativePath.length()-fileName.length()) + newFileName;
+		System.out.println("----MyConflictResolute----resoluteConfliction----newRelativePath is " + newRelativePath);
 		iro.renameLocalFile(relativePath,newRelativePath);
 		//更新版本信息
-		localVersionMap.put(remoteDeviceId, VersionManager.FILENOTEXIST);
+		localVectorClock.put(remoteDeviceId, VersionManager.FILENOTEXIST);
 		//创建文件名+remoteDeviceID的文件结点
 		String path = FileConstant.DEFAULTSHAREPATH + relativePath + remoteDeviceId;
 		iro.createEmptyFileNode(path, remoteMetaData.getFileID());
 		//更新remote设备的版本号
-		fileManager.updateVersionMap(path, remoteDeviceId, remoteVersionMap.getVersionNumber(remoteDeviceId));
+		fileManager.updateVectorClock(path, remoteDeviceId, remoteVectorClock.getVersionNumber(remoteDeviceId));
 		//请求文件
 		iro.fetchFile(remoteDeviceId, remoteMetaData.getFileID(), relativePath);
 	}

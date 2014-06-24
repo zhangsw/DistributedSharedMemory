@@ -7,7 +7,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import junit.framework.Assert;
 
 import android_programe.FileSystem.FileMetaData;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.Util.FileConstant;
 
 
@@ -184,22 +184,22 @@ public class SocketIO implements Runnable{
 		}
 	}
 	
-	public synchronized void sendFileVersionMap(VersionMap versionMap, String relativePath,
+	public synchronized void sendFileVectorClock(VectorClock vectorClock, String relativePath,
 			String tag) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	/**
-	 *发送文件的versionMap
-	 * @param versionMap
+	 *发送文件的vectorClock
+	 * @param vectorClock
 	 * @param fileID
 	 * @param relativePath
 	 */
-	public synchronized void sendFileVersion(VersionMap versionMap,FileMetaData metaData,String relativePath,String tag){
+	public synchronized void sendFileVersion(VectorClock vectorClock,FileMetaData metaData,String relativePath,String tag){
 		IOMessage msg = new IOMessage();
 		msg.type = VERSION;
-		msg.obj1 = versionMap;
+		msg.obj1 = vectorClock;
 		msg.obj2 = metaData;
 		msg.sArg1 = relativePath;
 		msg.sArg2 = tag;
@@ -221,11 +221,11 @@ public class SocketIO implements Runnable{
 			Assert.assertNotNull(msg.sArg1);
 			Assert.assertNotNull(msg.sArg2);
 			oos.writeUTF(FileTransferHeader.sendFileVersionHeader(msg.sArg1, msg.sArg2));
-			oos.writeUnshared((VersionMap)(msg.obj1));
+			oos.writeUnshared((VectorClock)(msg.obj1));
 			oos.writeUnshared((FileMetaData)(msg.obj2));
 			oos.flush();
 			oos.reset();
-			System.out.println("socketIO has sended versionMap,relativePath is" + msg.sArg1);
+			System.out.println("socketIO has sended vectorClock,relativePath is" + msg.sArg1);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

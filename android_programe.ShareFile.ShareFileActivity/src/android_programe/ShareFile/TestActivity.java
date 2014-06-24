@@ -19,7 +19,7 @@ import android.view.View;
 import android.widget.Button;
 import android_programe.Conflict.ConflictDetect;
 import android_programe.FileSystem.FileManager;
-import android_programe.FileSystem.VersionMap;
+import android_programe.FileSystem.VectorClock;
 import android_programe.MemoryManager.MemoryManager;
 import android_programe.Util.FileConstant;
 
