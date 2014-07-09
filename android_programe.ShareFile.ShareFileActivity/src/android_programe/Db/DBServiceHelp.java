@@ -8,9 +8,9 @@ import android_programe.Db.DBContract.MetaDataEntry;
 
 public class DBServiceHelp extends SQLiteOpenHelper{
 	
-	private final static String DATABASE_NAME = "MetaData.db";
-	private final static int DATABASE_VERSION = 1;
-	private final static String COMMA_SEP = ",";
+	private static final  String DATABASE_NAME = "MetaData.db";
+	private static final  int DATABASE_VERSION = 1;
+	private static final  String COMMA_SEP = ",";
 	
 
 	public DBServiceHelp(Context context) {
@@ -23,7 +23,7 @@ public class DBServiceHelp extends SQLiteOpenHelper{
 		// TODO Auto-generated method stub
 		String sql = "CRETE TABLE" + MetaDataEntry.TABLE_NAME + "(" + MetaDataEntry.COLUMN_NAME_DIRECTORY + " TEXT,"
 				+ MetaDataEntry.COLUMN_NAME_VERSION + " INTEGER," + MetaDataEntry.COLUMN_NAME_AUTHOR + " TEXT,"
-				+ MetaDataEntry.COLUMN_NAME_SIZE + " INTEGER," + MetaDataEntry.COLUMN_NAME_PRERVERSION + " INTEGER" +")";
+				+ MetaDataEntry.COLUMN_NAME_SIZE + " INTEGER," +")";
 		db.execSQL(sql);		
 	}
 

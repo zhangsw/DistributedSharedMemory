@@ -371,8 +371,8 @@ public class MemoryManager implements IMemoryManager{
 		if(fileManager.fileObserverExist(absolutePath)){	//本地存在该文件的结点
 			System.out.println("local has file node");
 			FileMetaData localMetaData = fileManager.getMyFileObserver(absolutePath).getFileMetaData();
-			System.out.println("local: " + localMetaData.getFileSize() +", "+ localMetaData.getFileCreator() +"," + localMetaData.getFileID() + "," +localMetaData.getRelativePath() +", "+ localMetaData.getVersionID() +", "+localMetaData.getModifiedTime());
-			System.out.println("remote: "+ fileMetaData.getFileSize() + ", "+ fileMetaData.getFileCreator() + "," + fileMetaData.getFileID() + ","+fileMetaData.getRelativePath() + ", "+ fileMetaData.getVersionID() + ", " +fileMetaData.getModifiedTime());
+			System.out.println("local: " + localMetaData.getFileSize() +", " + localMetaData.getFileID() + "," +localMetaData.getRelativePath() +", "+ localMetaData.getVersionID() +", "+localMetaData.getModifiedTime());
+			System.out.println("remote: "+ fileMetaData.getFileSize() + ", " + fileMetaData.getFileID() + ","+fileMetaData.getRelativePath() + ", "+ fileMetaData.getVersionID() + ", " +fileMetaData.getModifiedTime());
 			if(localMetaData.equals(fileMetaData)){
 				System.out.println("metaData is the same");
 				fileManager.getMyFileObserver(absolutePath).updateVectorClock(target, fileMetaData.getVersionID());

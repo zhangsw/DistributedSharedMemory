@@ -1,9 +1,8 @@
 package android_programe.ShareFile;
 
+import java.io.IOException;
 
-import java.io.*;
-import java.util.*;
-
+import android.app.IntentService;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,36 +10,48 @@ import android.content.IntentFilter;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
-import android.util.Log;
 import android_programe.MemoryManager.MemoryManager;
+import android_programe.ShareFile.SharedMem.MyBinder;
 import android_programe.Util.FileConstant;
 import android_programe.Util.FileOperateHelper;
 
-
-public class SharedMem extends Service implements ConnectionChangeCallBack{
-
+public class SharedMemoryService extends Service implements ConnectionChangeCallBack{
+	
 	private MemoryManager memManager;
 	private String localID;
-	private List fileList;
-	private String path;
-	
 	private MyBinder myBinder = new MyBinder();
 	private ConnectionChangeReceiver mConChangeReceiver;
 	
-	@Override
-	public IBinder onBind(Intent intent) {
-		// TODO Auto-generated method stub
-		
-		return myBinder;
+	public boolean connect(String ip) throws IOException{
+		if(memManager == null) memManager = new MemoryManager(getLocalMacAddress());
+		if(memManager.connect(ip)){
+			return true;
+		}
+		else return false;
 	}
+	
+	public boolean disconnect(String ip){
+		if(memManager == null) return false;
+		else{
+			System.out.println("before enter memManager's disconnect device:" + ip);
+			boolean tag = memManager.disconnect(ip);
+			if(tag){
+				System.out.println("has been disconnected with device: " + ip);
+				return true;
+			}
+			return false;
+		}
+	}
+	
+
 	@Override
 	public void onCreate() {
 		// TODO Auto-generated method stub
 		super.onCreate();
+		
 		System.out.println("enter service oncreate");
 		try {
 			localID = getLocalAddress();
@@ -51,13 +62,14 @@ public class SharedMem extends Service implements ConnectionChangeCallBack{
 			e.printStackTrace();
 		}
 		
+		//注册监听wifi
 		mConChangeReceiver = new ConnectionChangeReceiver(this);
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
 		filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-		registerReceiver(mConChangeReceiver,filter);
+		registerReceiver(mConChangeReceiver,filter);	
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		// TODO Auto-generated method stub
@@ -66,44 +78,20 @@ public class SharedMem extends Service implements ConnectionChangeCallBack{
 		memManager.stop();
 	}
 	
-	/**
-	 * 本地设备的wifi被关闭了
-	 */
-	public void wifiDisabled(){
-		System.out.println("wifi is disabled");
-		networkDisabled();
+	
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		// TODO Auto-generated method stub
+		return super.onStartCommand(intent, flags, startId);
 	}
-	
-	/**
-	 * 本地设备连接上了wifi
-	 */
-	public void wifiConnected(){
-		System.out.println("wifi is connected,local ip is " + getLocalAddress());
-		String ip = getLocalAddress();
-		if((localID == null) || !ip.equals(localID)){
-			localID = ip;
-			networkReconnectAll(ip);
-		}
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		// TODO: Return the communication channel to the service.
+		return myBinder;
+		//throw new UnsupportedOperationException("Not yet implemented");
 	}
-	
-	/**
-	 * 本地设备断开了wifi
-	 */
-	public void wifiDisconnected(){
-		System.out.println("wifi is disconnected");
-		//wifi已经断开了当前连接，网络不可用
-		networkDisabled();
-	}
-	
-	
-	public void readFile(String filename,String filePath){
-		File file = new File(filePath);
-	}
-	
-	public void writeFile(String filename){
-		
-	}
-	
 	
 	private void initialize(){
 		//初始化，创建文件夹
@@ -143,10 +131,10 @@ public class SharedMem extends Service implements ConnectionChangeCallBack{
         return ((ipAddress & 0xff)+"."+(ipAddress>>8 & 0xff)+"."  
                 +(ipAddress>>16 & 0xff)+"."+(ipAddress>>24 & 0xff));  
 	}
-
+	
 	public class MyBinder extends Binder{
-		public SharedMem getService(){
-			return SharedMem.this;
+		public SharedMemoryService getService(){
+			return SharedMemoryService.this;
 		}
 
 		@Override
@@ -155,33 +143,31 @@ public class SharedMem extends Service implements ConnectionChangeCallBack{
 			// TODO Auto-generated method stub
 			return super.onTransact(code, data, reply, flags);
 		}
-		
-		public boolean connect(String ip) throws IOException{
-			if(memManager == null) memManager = new MemoryManager(getLocalMacAddress());
-			if(memManager.connect(ip)){
-				return true;
-			}
-			else return false;
+	}
+
+	public void wifiDisabled() {
+		// TODO Auto-generated method stub
+		System.out.println("wifi is disabled");
+		networkDisabled();
+	}
+
+	public void wifiConnected() {
+		// TODO Auto-generated method stub
+		System.out.println("wifi is connected,local ip is " + getLocalAddress());
+		String ip = getLocalAddress();
+		if((localID == null) || !ip.equals(localID)){
+			localID = ip;
+			networkReconnectAll(ip);
 		}
-		
-		public boolean disconnect(String ip){
-			if(memManager == null) return false;
-			else{
-				System.out.println("before enter memManager's disconnect device:" + ip);
-				boolean tag = memManager.disconnect(ip);
-				if(tag){
-					System.out.println("has been disconnected with device: " + ip);
-					return true;
-				}
-				return false;
-			}
-		}
-		
 		
 	}
-	
-	
-	
+
+	public void wifiDisconnected() {
+		// TODO Auto-generated method stub
+		System.out.println("wifi is disconnected");
+		//wifi已经断开了当前连接，网络不可用
+		networkDisabled();
+	}
+
 	
 }
-

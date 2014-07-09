@@ -12,9 +12,9 @@ import android.os.Parcelable;
 
 public class ConnectionChangeReceiver extends BroadcastReceiver{
 
-	SharedMem sm;
-	public ConnectionChangeReceiver(SharedMem sm){
-		this.sm = sm;
+	ConnectionChangeCallBack callBack;
+	public ConnectionChangeReceiver(ConnectionChangeCallBack callBack){
+		this.callBack = callBack;
 	}
 	@Override
 	public void onReceive(Context context, Intent intent) {
@@ -27,7 +27,7 @@ public class ConnectionChangeReceiver extends BroadcastReceiver{
 			}break;
 			case WifiManager.WIFI_STATE_DISABLED:{
 				//wifi±»¹Ø±Õ
-				sm.wifiDisabled();
+				callBack.wifiDisabled();
 			}break;
 			case WifiManager.WIFI_STATE_ENABLING:{
 				
@@ -50,9 +50,9 @@ public class ConnectionChangeReceiver extends BroadcastReceiver{
         	   NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
         	   State state = networkInfo.getState();
         	   if(state == State.CONNECTED){
-        		   sm.wifiConnected();
+        		   callBack.wifiConnected();
         	   }else if(state == State.DISCONNECTED){
-        		   sm.wifiDisconnected();
+        		   callBack.wifiDisconnected();
         	   }else if(state == State.CONNECTING){
         		   System.out.println("wifi is connecting");
         	   }else if(state == State.DISCONNECTING){

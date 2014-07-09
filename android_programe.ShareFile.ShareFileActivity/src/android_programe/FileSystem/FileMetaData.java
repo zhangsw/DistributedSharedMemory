@@ -14,7 +14,7 @@ public class FileMetaData implements Serializable{
 	
 	private long mFileSize;	//文件大小
 	
-	private String mFileCreator;	//文件作者
+	//private String mFileCreator;	//文件作者
 	
 	private long mModifiedTime;	//文件的修改日期
 	
@@ -39,7 +39,7 @@ public class FileMetaData implements Serializable{
 		mRelativePath = relativePath;
 		//mAbsolutePath = absolutePath;
 		mFileSize = fileSize;
-		mFileCreator = creator;
+		//mFileCreator = creator;
 		mModifiedTime = modifiedTime;
 	}
 	
@@ -84,13 +84,14 @@ public class FileMetaData implements Serializable{
 		return mFileSize;
 	}
 	
+	/*
 	public void setFileCreator(String creator){
 		mFileCreator = creator;
 	}
 	
 	public String getFileCreator(){
 		return mFileCreator;
-	}
+	}*/
 	
 	public void setModifiedTime(long time){
 		mModifiedTime = time;
@@ -108,8 +109,7 @@ public class FileMetaData implements Serializable{
 		FileMetaData fmd = (FileMetaData) o;
 		return (mVersionID == fmd.mVersionID) && (mFileSize == fmd.mFileSize) && (mModifiedTime == fmd.mModifiedTime) &&
 				(mFileID == null ? fmd.mFileID == null:mFileID.equals(fmd.mFileID)) &&
-				(mRelativePath == null ?fmd.mRelativePath == null:mRelativePath.equals(fmd.mRelativePath))&&
-				(mFileCreator == null ?fmd.mFileCreator == null:mFileCreator.equals(fmd.mFileCreator));
+				(mRelativePath == null ?fmd.mRelativePath == null:mRelativePath.equals(fmd.mRelativePath));
 	}
 
 	@Override
@@ -118,7 +118,6 @@ public class FileMetaData implements Serializable{
 		int result = 17;
 		result = 31*result + (mFileID == null ? 0:mFileID.hashCode());
 		result = 31*result + (mRelativePath == null ? 0:mRelativePath.hashCode());
-		result = 31*result + (mFileCreator == null ? 0:mFileCreator.hashCode());
 		result = 31*result + mVersionID;
 		result = 31*result + (int)(mFileSize^(mFileSize >>> 32));
 		result = 31*result + (int)(mModifiedTime^(mModifiedTime >>> 32));
