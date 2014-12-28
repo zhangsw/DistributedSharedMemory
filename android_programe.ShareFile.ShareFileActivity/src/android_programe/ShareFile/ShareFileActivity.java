@@ -152,6 +152,14 @@ public class ShareFileActivity extends Activity {
 				}
 			}
 		});
+        
+        mTestModifyBt.setOnClickListener(new View.OnClickListener() {
+			
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
     }
 	
 	@Override
